@@ -1,0 +1,277 @@
+{# Test screen, guided-sections layout (14 Aug 2026 redesign — verdict
+   on branch prototype/agent-test: variant B, with the extracted-values
+   list given real row separation). The loop reads as it is lived:
+   1 run a test, 2 what came back, 3 tune and go again. #}
+{% extends "base.html" %}
+{% block title %}Test — {{ agent.name }} — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'agents' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block steps %}{% with steps_current = 4, agent = agent %}{% include 'client/_steps.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Agents / {{ agent.name }}{% endblock %}
+{% block heading %}Tune it until the answers are right{% endblock %}
+{% block content %}
+{% if dialling %}<meta http-equiv="refresh" content="4">{% endif %}
+{% set latest = (runs | selectattr('status', 'equalto', 'complete') | list | first) %}
+
+{% if error == 'no-from-number' %}
+<div class="callout warn" style="margin-bottom:1rem">
+  No caller ID configured. Set <span class="cell-mono">TELNYX_FROM_NUMBER</span> in .env
+  to a Nigerian number on the account, then try again.
+</div>
+{% elif error == 'balance' %}
+<div class="callout warn" style="margin-bottom:1rem">
+  Your wallet can't cover another call right now. Top up — see
+  <a href="/wallet">Wallet</a> for transfer details — and try again.
+</div>
+{% elif error == 'dial' %}
+<div class="callout warn" style="margin-bottom:1rem">
+  The call could not be placed — nothing was billed. Try again in a moment.
+</div>
+{% endif %}
+
+<div style="max-width:940px; margin:0 auto">
+
+<div class="note-bar" style="margin-bottom:1rem">
+  <span class="pill" data-s="{{ 'live' if dialling else 'idle' }}"><span aria-hidden="true">◆</span> Test {{ runs[0].n if runs else '—' }}</span>
+  <span style="font-size:0.875rem; color:var(--bc-text-2)">
+    <span class="num">{{ runs | length }}</span> billed call{{ 's' if runs | length != 1 }} so far · agent v{{ agent.version_n }}
+  </span>
+  <span class="meta-sm">${{ '%.2f' | format(spend) }} SPENT ON TESTING</span>
+  <span class="meta-sm" style="margin-left:auto">{% if frozen %}SCHEMA FROZEN — THIS AGENT HAS RUN{% else %}SCHEMA UNLOCKED UNTIL LAUNCH{% endif %}</span>
+</div>
+
+{# ---------- 1 · run a test ---------- #}
+<p class="meta-sm" style="margin:0 0 0.2rem">1 · RUN A TEST</p>
+<h3 class="h4" style="margin:0 0 0.35rem">Call your own phone</h3>
+<p style="margin:0 0 0.75rem; font-size:0.875rem; color:var(--bc-text-2)">
+  Every test is a real, billed call using the stand-in values below in place of
+  a contact list.</p>
+<form method="post" action="/agents/{{ agent.id }}/test-calls">
+  <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+  <div class="panel">
+    <div class="panel-body stack">
+      <div class="field">
+        <label for="to_number">Number to call</label>
+        <input class="input" id="to_number" name="to_number" type="tel"
+               value="{{ last_to_number }}" placeholder="+2348030001188" required>
+        <p class="hint">Your own phone. Every test is a real, billed call.</p>
+      </div>
+      <p class="meta" style="margin:0.5rem 0 0">STAND-IN VALUES</p>
+      <div class="grid2" style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem">
+        {% for f in inputs %}
+        <div class="field">
+          <label for="standin_{{ f.key }}">{{ f.key }}</label>
+          <input class="input" id="standin_{{ f.key }}" name="standin_{{ f.key }}"
+                 value="{{ last_stand_ins.get(f.key, '') }}"
+                 {{ 'required' if f.required }}>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="panel-foot">
+      <span class="meta-sm">${{ '%.2f' | format(rate_per_min) }}/MIN, ROUNDED UP · TYPICALLY ~${{ '%.2f' | format(estimated_price) }}</span>
+      <button class="btn btn-primary btn-sm" type="submit">
+        <span class="pulse sm" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+        Run test {{ next_n }}
+      </button>
+    </div>
+  </div>
+</form>
+
+<div class="divider" style="margin:1.5rem 0"></div>
+
+{# ---------- 2 · what came back ---------- #}
+<p class="meta-sm" style="margin:0 0 0.2rem">2 · WHAT CAME BACK</p>
+<h3 class="h4" style="margin:0 0 0.35rem">{% if latest %}Test {{ latest.n }} — the answers{% else %}The answers land here{% endif %}</h3>
+<p style="margin:0 0 0.75rem; font-size:0.875rem; color:var(--bc-text-2)">
+  Extracted values from the most recent completed test, with changes since the
+  one before marked.</p>
+{% if latest %}
+<div class="panel" style="margin-bottom:1rem">
+  <div class="panel-head">
+    {% set missing = latest.diffs | selectattr('value', 'none') | list | length %}
+    {% if missing == 0 %}
+    <span class="pill" data-s="ok"><span aria-hidden="true">✓</span> Schema satisfied</span>
+    {% else %}
+    <span class="pill" data-s="fail"><span aria-hidden="true">✕</span> {{ missing }} field{{ 's' if missing != 1 }} empty</span>
+    {% endif %}
+    <span class="meta-sm">TEST {{ latest.n }} · {{ latest.created_at.strftime('%H:%M') }} · CHANGES FROM TEST {{ latest.n - 1 }} MARKED</span>
+  </div>
+  <div class="panel-body" style="padding-top:0.25rem; padding-bottom:0.25rem">
+    {# Each value gets its own room: a hairline between rows, air above
+       and below, key left / value right — no squinting to pair them. #}
+    {% for d in latest.diffs %}
+    <div style="padding:0.65rem 0; {% if not loop.last %}border-bottom:1px solid var(--bc-hairline);{% endif %}">
+      {% if (d.value is string) and (d.value | length) > 60 %}
+      <p class="meta-sm" style="margin:0 0 0.35rem">{{ d.key | upper }}</p>
+      <p style="margin:0; font-size:0.875rem; color:var(--bc-text-2); line-height:1.55">{{ d.value }}</p>
+      {% else %}
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:1rem">
+        <span class="cell-mono" style="font-size:0.875rem">{{ d.key }}</span>
+        <span class="tag {{ 'var' if d.change in ('changed', 'new') }}"
+              {% if d.change == 'changed' %}title="Changed from: {{ d.previous }}"{% endif %}
+        >{{ d.value if d.value is not none else 'null' }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="panel-foot">
+    <details style="width:100%">
+      <summary class="meta-sm" style="cursor:pointer">TRANSCRIPT</summary>
+      <div class="turns" style="margin-top:0.5rem">
+        {% for m in latest.transcript %}
+        <div class="turn" data-r="{{ 'agent' if m.role == 'assistant' else 'user' }}">
+          <p style="font-size:0.875rem">{{ m.text }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+  </div>
+</div>
+{% endif %}
+<div class="panel">
+  <div class="panel-head">
+    <h3 class="h5" style="margin:0">History</h3>
+    <span class="meta-sm">{{ runs | length }} CALL{{ 'S' if runs | length != 1 }} · ~${{ '%.2f' | format(spend) }}</span>
+  </div>
+  <div class="panel-body" style="padding-top:0; padding-bottom:0.5rem">
+    <div style="padding-top:0.5rem; max-height:12rem; overflow-y:auto">
+      {% for r in runs %}
+      <div class="map-row" style="grid-template-columns:64px minmax(0,1.2fr) minmax(0,1fr) 88px">
+        <span class="cell-mono">Test {{ r.n }}</span>
+        <span style="font-size:0.8125rem; color:var(--bc-text-2)">{{ r.to_number }}</span>
+        {% if r.status == 'complete' %}
+        <span class="pill" data-s="ok">✓ Answers back</span>
+        {% elif r.status == 'failed' %}
+        <span class="pill" data-s="fail">✕ Did not complete</span>
+        {% else %}
+        <span class="pill" data-s="live">● Dialling…</span>
+        {% endif %}
+        <span class="meta-sm">{{ r.created_at.strftime('%H:%M') }}</span>
+      </div>
+      {% else %}
+      <p style="color:var(--bc-text-2); padding:0.75rem 0; font-size:0.875rem">
+        No tests yet. The only truthful test of a schema is the path production
+        takes — run one against your own phone.
+      </p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="divider" style="margin:1.5rem 0"></div>
+
+{# ---------- 3 · tune and go again ---------- #}
+<p class="meta-sm" style="margin:0 0 0.2rem">3 · TUNE AND GO AGAIN</p>
+<h3 class="h4" style="margin:0 0 0.35rem">Change what gets extracted, or fix the guide</h3>
+<p style="margin:0 0 0.75rem; font-size:0.875rem; color:var(--bc-text-2)">
+  Schema edits apply to the next test call{% if not frozen %}; a described problem
+  rewrites just that part of the guide{% endif %}.</p>
+<div class="stack" style="display:grid; gap:1rem">
+
+  {% if frozen %}
+  <div class="panel">
+    <div class="panel-body" style="padding-top:0.5rem; padding-bottom:0.5rem">
+      {% for f in outputs %}
+      <div class="row between" style="display:flex; justify-content:space-between; gap:0.75rem; padding:0.375rem 0; font-size:0.875rem">
+        <span class="cell-mono">{{ f.key }}</span>
+        <span style="color:var(--bc-text-2)">
+          {{ f.type | upper }}{% if f.type == 'enum' %} · {{ f.values | join(', ') }}{% endif %}{% if f.required %} · REQUIRED{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="panel-foot">
+      <span class="meta-sm">DUPLICATE THE AGENT TO CHANGE IT</span>
+    </div>
+  </div>
+  {% else %}
+  <form method="post" action="/agents/{{ agent.id }}/versions">
+    <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+    <input type="hidden" name="content_json" id="content-json">
+    <input type="hidden" name="return_to" value="test">
+    <div class="panel">
+      <div class="panel-body" style="padding-top:0; padding-bottom:0">
+        <div style="max-height:300px; overflow-y:auto; padding:0.5rem 0">
+          <div id="outputs-editor">
+            {% for f in outputs %}
+            <div class="schema-row output-row" data-field-id="{{ f.id }}">
+              <input class="output-key" value="{{ f.key }}" aria-label="Field name">
+              <select class="output-type" aria-label="Type">
+                <option value="enum" {{ 'selected' if f.type == 'enum' }}>ENUM</option>
+                <option value="text" {{ 'selected' if f.type == 'text' }}>TEXT</option>
+              </select>
+              <input class="output-values" value="{{ f.values | join(', ') }}"
+                     placeholder="values, comma-separated" aria-label="Enum values"
+                     {{ 'hidden' if f.type != 'enum' }}>
+              <label class="meta-sm"><input type="checkbox" class="output-required"
+                     {{ 'checked' if f.required }}> REQUIRED</label>
+              <button class="btn btn-ghost btn-sm output-remove" type="button" aria-label="Remove">✕</button>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="panel-foot">
+        <button class="btn btn-ghost btn-sm" type="button" id="add-output">+ Add field</button>
+        <span class="meta-sm">CHANGES APPLY TO THE NEXT TEST CALL</span>
+        <button class="btn btn-secondary btn-sm" type="submit">Save as v{{ agent.version_n + 1 }}</button>
+      </div>
+    </div>
+  </form>
+
+  <form method="post" action="/agents/{{ agent.id }}/regenerate">
+    <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+    <div class="panel">
+      <div class="panel-body">
+        <div class="field">
+          <label for="fixit">Something sound wrong?</label>
+          <textarea class="textarea" id="fixit" name="problem" style="min-height:64px" required
+            placeholder="It read the date as numbers instead of saying it out loud."></textarea>
+          <div class="dictate" data-dictate="#fixit"></div>
+          <p class="hint">Describe it and Becca rewrites just that part. Your fields stay as they are.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" type="submit">Fix the guide</button>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+</div>
+
+<div class="panel" style="position:sticky; bottom:0.5rem; z-index:5; margin-top:1.5rem">
+  <div class="panel-body">
+    {% if frozen %}
+    <div class="callout">
+      <strong>This schema is locked.</strong> This agent has run, and every call
+      was scored against these fields — they stay fixed so the results stay
+      readable. Test calls still work; to change the guide or schema,
+      duplicate the agent.
+    </div>
+    <div class="row between" style="display:flex; justify-content:space-between; margin-top:1rem">
+      <a class="btn btn-ghost btn-sm" href="/agents/{{ agent.id }}">Back to guide</a>
+    </div>
+    {% else %}
+    <div class="callout warn">
+      <strong>Launching locks this schema.</strong> Each call is scored once, as
+      it ends, and cannot be re-scored afterwards. Once this agent launches,
+      these fields are fixed for every call it makes.
+    </div>
+    <div class="row between" style="display:flex; justify-content:space-between; margin-top:1rem">
+      <a class="btn btn-ghost btn-sm" href="/agents/{{ agent.id }}">Back to guide</a>
+      <a class="btn btn-primary btn-sm" href="/contacts?agent={{ agent.id }}">Continue to contacts</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+</div>
+
+<script type="application/json" id="base-content">{{ base_content | tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="/static/test.js"></script>
+<script src="/static/dictate.js"></script>
+{% endblock %}

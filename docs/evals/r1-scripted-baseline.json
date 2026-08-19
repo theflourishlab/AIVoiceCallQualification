@@ -1,0 +1,299 @@
+{
+  "batch": "r1-scripted-baseline",
+  "rubric_version": 1,
+  "generated_at": "2026-08-13T10:47:05.206963+00:00",
+  "criteria": [
+    {
+      "id": "annotation_leak",
+      "title": "Annotation leakage",
+      "kind": "mechanical",
+      "definition": "The agent spoke markup aloud: mustache ({{...}}), a bracketed field reference ([key]), or a [value: label] annotation."
+    },
+    {
+      "id": "long_turn",
+      "title": "Turn length",
+      "kind": "mechanical",
+      "definition": "An agent turn ran past the 'one or two sentences' rule (flagged at three or more)."
+    },
+    {
+      "id": "ack_tic",
+      "title": "Acknowledgement tic",
+      "kind": "mechanical",
+      "definition": "Consecutive agent turns opened with the same acknowledgement ('Got it, thanks X' every turn)."
+    },
+    {
+      "id": "verbatim_repeat",
+      "title": "Verbatim repetition",
+      "kind": "mechanical",
+      "definition": "The agent said the same sentence twice in one call."
+    },
+    {
+      "id": "redundant_question",
+      "title": "Redundant question",
+      "kind": "judged",
+      "definition": "The agent asked the contact for information the DETAILS FOR THIS CALL block already contained (e.g. asking for a name or requirement that was provided as a value)."
+    },
+    {
+      "id": "invention",
+      "title": "Invention",
+      "kind": "judged",
+      "definition": "The agent stated a name, fact, or detail that appears nowhere in its instructions and nowhere in the contact's own turns \u2014 invented, replaced, or 'corrected' a provided value."
+    },
+    {
+      "id": "context_loss",
+      "title": "Re-asking / context loss",
+      "kind": "judged",
+      "definition": "The agent re-asked a question the contact had already answered in this call, or lost a correction the contact made about themselves (e.g. buy vs rent)."
+    },
+    {
+      "id": "mishear_adoption",
+      "title": "Mishear adoption",
+      "kind": "judged",
+      "definition": "The transcript shows an obvious transcription mishear and the agent ADOPTED it as fact (repeated the garbled name/word back, built on it) instead of gliding past or clarifying. The mishear itself is not the violation; adopting it is."
+    },
+    {
+      "id": "plan_deviation",
+      "title": "Plan adherence",
+      "kind": "judged",
+      "definition": "The agent skipped a plan step, took steps out of order, packed several asks into one turn, answered for the contact, or improvised beyond the plan instead of deflecting off-plan questions to a follow-up from the team."
+    },
+    {
+      "id": "closing_naturalness",
+      "title": "Closing & naturalness",
+      "kind": "judged",
+      "definition": "The close was abrupt, cold, or missing once the plan was complete; or delivery was unnatural \u2014 numbers/dates read as digits, stiff recited phrasing, robotic register."
+    }
+  ],
+  "totals": {
+    "annotation_leak": 0,
+    "long_turn": 12,
+    "ack_tic": 1,
+    "verbatim_repeat": 0,
+    "redundant_question": 0,
+    "invention": 0,
+    "context_loss": 0,
+    "mishear_adoption": 1,
+    "plan_deviation": 3,
+    "closing_naturalness": 4
+  },
+  "calls": [
+    {
+      "label": "test-4",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 16,
+      "agent_turns": 8,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 3,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 0,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 2,
+          "quote": "Hi Flourish! I'm calling on behalf of Silverstar \u2014 just a quick, friendly check-in on your interest in buying or selling property. Is now a good moment to chat?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 13,
+          "quote": "Perfect, thank you Flourish! That's really helpful to know. Someone from our team will follow up with you personally about your plans.\n\nI truly appreciate your time today \u2014 the team values hearing about what you're looking for. Take care!",
+          "note": "5 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 15,
+          "quote": "You're very welcome, Flourish! Have a wonderful day. Bye!",
+          "note": "3 sentences in one turn"
+        }
+      ],
+      "judge_overall": "The call largely followed the plan well: greeting, selling interest, buying interest, budget, and purchase-vs-rent/property type were all asked in order and captured naturally. The contact's mishear (\"Spanish\") was correctly glided past rather than adopted. One minor issue: the agent's closing line about \"someone from the team will follow up\" is a boundary-deflection phrase but was used here even though the contact had answered everything fully with no unanswered question pending \u2014 this is a slight misuse of that specific phrase, though not a major violation since it doesn't contradict the plan's close instructions. Overall a clean, warm, well-paced call with no significant redundant questions, invented details, or context loss."
+    },
+    {
+      "label": "test-5",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 19,
+      "agent_turns": 10,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 5,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 2,
+        "closing_naturalness": 2
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 2,
+          "quote": "Wonderful, Flourish! I'm calling on behalf of Silverstar \u2014 just checking in on your interest in buying or selling property. And it sounds like the timing really is perfect.\n\nYou mentioned you're looking to rent a flat in Aba. May I ask what budget range you have in mind for that?",
+          "note": "5 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 2,
+          "quote": "Wonderful, Flourish! I'm calling on behalf of Silverstar \u2014 just checking in on your interest in buying or selling property. And it sounds like the timing really is perfect.\n\nYou mentioned you're looking to rent a flat in Aba. May I ask what budget range you have in mind for that?",
+          "note": "The plan requires asking about selling interest before buying interest; the agent skipped the selling-interest step entirely and jumped straight to buying/budget."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 6,
+          "quote": "Understood, Flourish \u2014 renting it is. And a flat in Aba, noted. I really appreciate you taking the time to share your plans with me. The team will be in touch personally to follow up with you. Thank you so much, Flourish \u2014 truly valued speaking with you today.",
+          "note": "5 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 6,
+          "quote": "Understood, Flourish \u2014 renting it is. And a flat in Aba, noted. I really appreciate you taking the time to share your plans with me. The team will be in touch personally to follow up with you. Thank you so much, Flourish \u2014 truly valued speaking with you today.",
+          "note": "Agent closed the call before covering the selling-interest step, which is required by the plan before closing."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 10,
+          "quote": "Thank you for that, Flourish. So to confirm \u2014 renting a flat in Aba, budget around three million, and no selling interest at the moment. The team will follow up with you personally. Really appreciate your time today, Flourish \u2014 take care!",
+          "note": "4 sentences in one turn"
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 10,
+          "quote": "Thank you for that, Flourish. So to confirm \u2014 renting a flat in Aba, budget around three million, and no selling interest at the moment. The team will follow up with you personally. Really appreciate your time today, Flourish \u2014 take care!",
+          "note": "This is a second full close after the plan was already closed once in turn 6, making the call feel repetitive and unnatural with redundant sign-offs."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 14,
+          "quote": "I'm sorry, I didn't quite catch that, Flourish. But thank you again for your time today \u2014 the team will be in touch soon. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 14,
+          "quote": "I'm sorry, I didn't quite catch that, Flourish. But thank you again for your time today \u2014 the team will be in touch soon. Take care!",
+          "note": "Agent brushes off the contact's attempt to correct information and closes again, creating a third abrupt close within a few turns rather than engaging with the correction."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 16,
+          "quote": "Got it, Flourish \u2014 thank you for clarifying! Yaba, not Aba. I'll make sure that's noted correctly for the team. Really appreciate you taking the time, Flourish \u2014 they'll follow up with you personally. Have a great day!",
+          "note": "5 sentences in one turn"
+        }
+      ],
+      "judge_overall": "The agent skipped the selling-interest step until the contact pointed it out, and closed the call twice prematurely before the plan was actually complete, leading to an awkward, repeated-goodbye pattern. It also correctly handled the location correction at the end, but the overall flow was out of order and had two abrupt closes."
+    },
+    {
+      "label": "test-6",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 20,
+      "agent_turns": 10,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 2,
+        "ack_tic": 1,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 1,
+        "plan_deviation": 0,
+        "closing_naturalness": 1
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 2,
+          "quote": "Hi Flourish! I'm calling on behalf of Silverstar \u2014 just a quick check-in on your interest in buying or selling property. Am I speaking with the right person?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 2,
+          "quote": "Hi Flourish! I'm calling on behalf of Silverstar \u2014 just a quick check-in on your interest in buying or selling property. Am I speaking with the right person?",
+          "note": "opened \"hi flourish\" same as the previous turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 16,
+          "quote": "Thanks for that, Flourish. I really appreciate you taking the time to share your plans with me today. The team truly values hearing about your plans, and someone will be in touch to follow up with you personally. Have a wonderful day!",
+          "note": "4 sentences in one turn"
+        },
+        {
+          "criterion": "mishear_adoption",
+          "turn": 16,
+          "quote": "Thanks for that, Flourish. I really appreciate you taking the time to share your plans with me today.",
+          "note": "The agent accepted 'Six slots' (turn 15) as a valid answer to the property type question without any clarification, despite it being an obvious garbled/nonsensical transcription that doesn't correspond to any real property type."
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 18,
+          "quote": "You're very welcome, Flourish. Take care!",
+          "note": "The plan's close was already delivered in turn 16; this extra turn after the contact said goodbye adds an unplanned, slightly redundant tail-end exchange rather than ending cleanly once the plan was complete."
+        }
+      ],
+      "judge_overall": "The agent generally followed the plan steps in order (opening, selling interest, buying interest, budget, property type) despite the contact's garbled, hard-to-parse responses. However, it adopted a nonsensical mishear (\"Six slots\") as if it were a valid property type answer without seeking clarification, and the close/final exchange included an extra unplanned turn after the goodbye, making the ending slightly drawn out rather than crisp."
+    },
+    {
+      "label": "test-7",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 18,
+      "agent_turns": 8,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 2,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 1,
+        "closing_naturalness": 1
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 13,
+          "quote": "Understood \u2014 so no buying interest right now, and selling is a maybe for later. Thanks for clarifying, Flourish. \n\nJust to wrap up, are you looking to rent at all, or is it mainly just keeping an eye on selling for the time being?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 13,
+          "quote": "Understood \u2014 so no buying interest right now, and selling is a maybe for later. Thanks for clarifying, Flourish. \n\nJust to wrap up, are you looking to rent at all, or is it mainly just keeping an eye on selling for the time being?",
+          "note": "The plan calls for a single buy-or-rent question with property type/budget follow-ups; here the agent packs a summary and an additional rent-specific question into one turn, going beyond the simple one-step-at-a-time buying interest ask."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 15,
+          "quote": "I don't have commission details to hand, Flourish, but someone from the team will follow up with you personally on that. \n\nThanks so much for your time today \u2014 I really appreciate it. The team truly values hearing about your plans, and we'll be in touch. Take care!",
+          "note": "4 sentences in one turn"
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 17,
+          "quote": "You're welcome, Flourish. Have a great day!",
+          "note": "The plan's close was already delivered in turn 15; this extra farewell turn is redundant and not part of the planned close, making the ending slightly tacked-on rather than a single clean close."
+        }
+      ],
+      "judge_overall": "The call largely followed the plan structure (opening, selling interest, buying interest, boundaries on unanswerable questions, close), and the agent handled off-plan questions (property prices, ID number, commission) appropriately by deflecting to the team. However, there is a plan deviation in turn 13 where the agent both summarized the buying answer and asked an additional rent-specific follow-up in the same turn, and turn 17 adds an unplanned extra farewell line after the close was already delivered in turn 15, making the ending slightly repetitive."
+    }
+  ]
+}

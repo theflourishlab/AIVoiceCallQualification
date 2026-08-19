@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Becca staff — Becca console{% endblock %}
+{% block nav %}{% with nav_active = 'staff' %}{% include "console/_nav.html" %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ staff.email[:1] | upper }}{% endblock %}
+{% block tenant_name %}{{ staff.email.split('@')[0] | capitalize }}{% endblock %}
+{% block tenant_kind %}BECCA{% endblock %}
+{% block crumb %}Becca console{% endblock %}
+{% block heading %}Becca staff{% endblock %}
+{% block content %}
+
+{% if error == 'self' %}
+<div class="callout warn"><strong>You cannot remove yourself</strong> — that locks you out of the console.</div>
+{% elif error == 'seeded' %}
+<div class="callout warn"><strong>That address is seeded in configuration</strong>
+  (BECCA_STAFF_EMAILS), so removing the row would undo itself on their next sign-in.
+  Remove it from the deployment's configuration instead.</div>
+{% elif error == 'exists' %}
+<div class="callout"><strong>Already staff.</strong> Nothing to do.</div>
+{% elif error == 'email' %}
+<div class="callout warn"><strong>That does not look like an email address.</strong></div>
+{% endif %}
+
+<div class="split">
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Who can reach the console</h3>
+      <span class="meta-sm">{{ members | length }} {{ 'PERSON' if members | length == 1 else 'PEOPLE' }}</span></div>
+    <div class="panel-body" style="padding-top:var(--np-space-2)">
+      {% for m in members %}
+      <div class="role-row">
+        <span class="stack-sm" style="gap:0">
+          <span class="cell-strong">{{ m.email.split('@')[0] | capitalize }}{% if m.is_me %} (you){% endif %}</span>
+          <span class="meta-sm">{{ m.email | upper }}</span>
+        </span>
+        <span class="cell-mono">Becca staff</span>
+        <span class="pill" data-s="live"><span aria-hidden="true">✦</span> Full access</span>
+        {% if m.seeded %}
+        <span class="meta-sm" title="From BECCA_STAFF_EMAILS">SEEDED AT SETUP</span>
+        {% elif m.is_me %}
+        <span class="meta-sm"></span>
+        {% else %}
+        <form method="post" action="/staff/{{ m.id }}/remove" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+          <button class="btn btn-ghost btn-sm" type="submit"
+                  style="color:var(--bc-magenta-ink)">Remove</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="panel-foot">
+      <form method="post" action="/staff" class="row" style="gap:0.5rem; flex:1">
+        <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+        <input name="email" type="email" required placeholder="their.name@gmail.com"
+               aria-label="Google email to add" style="flex:1; min-width:12rem">
+        <button class="btn btn-primary btn-sm" type="submit">Add staff</button>
+      </form>
+      <span style="font-size:0.8125rem; color:var(--bc-text-2)">No invite is sent. They sign in and it works.</span>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="panel">
+      <div class="panel-head"><h3 class="h4" style="margin:0">What Becca staff can do</h3></div>
+      <div class="panel-body">
+        <ul class="check">
+          <li data-s="ok"><span class="g" aria-hidden="true">✓</span><span>See every client account, cost, margin and invoice</span></li>
+          <li data-s="ok"><span class="g" aria-hidden="true">✓</span><span>Enter any client account and work inside it</span></li>
+          <li data-s="ok"><span class="g" aria-hidden="true">✓</span><span>Allocate channels, assign numbers, set margins</span></li>
+          <li data-s="ok"><span class="g" aria-hidden="true">✓</span><span>Add and remove client users on request</span></li>
+        </ul>
+      </div>
+    </div>
+
+    {# FR-CONSOLE-8: every console action lands here, including Entering. #}
+    <div class="panel">
+      <div class="panel-head"><h3 class="h4" style="margin:0">Recent console activity</h3>
+        <span class="meta-sm">AUDIT LOG · LAST {{ feed | length }}</span></div>
+      <div class="panel-body stack-sm">
+        {% for e in feed %}
+        {% if not loop.first %}<div class="divider"></div>{% endif %}
+        <div class="stack-sm">
+          <span class="row between">
+            <span style="font-size:0.875rem">
+              {{ (e.actor or 'someone').split('@')[0] | capitalize }}
+              {{ e.action }}{% if e.target %} · {{ e.target }}{% endif %}
+            </span>
+            <span class="meta-sm">{{ e.at.strftime('%d %b %H:%M') }}</span>
+          </span>
+          {% if e.client %}<span class="meta-sm" style="margin:0">{{ e.client | upper }}</span>{% endif %}
+        </div>
+        {% else %}
+        <p class="meta" style="margin:0">Nothing yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

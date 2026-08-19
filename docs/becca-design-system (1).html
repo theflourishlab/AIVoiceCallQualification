@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Becca Design System — light &amp; dark</title>
+<meta name="description" content="The Becca design system: four locked brand hues, two canvases, and a live contrast bench that checks every token against the canvas it actually sits on.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS
+   --bc-*  = Becca system tokens, straight from the spec.
+   --np-*  = NEW PATTERN. Not in Becca Design Language v3.
+             Every one of these is listed in §08 Audit and needs
+             promoting into the source doc, not left living here.
+   ============================================================ */
+
+:root {
+  /* --- Locked brand hues (never mode-dependent) --- */
+  --bc-cyan:            #00C6E0;
+  --bc-magenta:         #EC4699;
+  --bc-navy:            #050B16;
+  --bc-white:           #FAFBFC;
+
+  /* --- NEW PATTERN: spacing scale (spec defines none) --- */
+  --np-space-1: 0.25rem;  --np-space-2: 0.5rem;   --np-space-3: 0.75rem;
+  --np-space-4: 1rem;     --np-space-5: 1.5rem;   --np-space-6: 2rem;
+  --np-space-7: 3rem;     --np-space-8: 4.5rem;   --np-space-9: 7rem;
+
+  /* --- NEW PATTERN: radius scale (spec defines none) --- */
+  --np-radius-sm: 4px;  --np-radius-md: 8px;  --np-radius-lg: 14px;
+
+  /* --- NEW PATTERN: motion (spec names the signature, not the timings) --- */
+  --np-dur-micro:    130ms;
+  --np-dur-standard: 240ms;
+  --np-dur-large:    360ms;
+  --np-ease-out:   cubic-bezier(0, 0, 0.2, 1);
+  --np-ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --np-ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* --- Type roles --- */
+  --bc-font-display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+  --bc-font-body:    "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --bc-font-mono:    "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --np-measure: 68ch;
+  --np-grain-opacity: 0.045;
+}
+
+/* --- Dark mode: the default canvas (~95% of surface) --- */
+[data-mode="dark"] {
+  --bc-canvas:        #050B16;
+  --bc-surface:       #0E1826;
+  --bc-surface-alt:   #131F33;   /* Surface Elevated */
+  --bc-hairline:      #1E2A3D;
+  --bc-text-1:        #FAFBFC;
+  --bc-text-2:        #8A97AC;
+  --bc-text-3:        #5C6B80;
+  --bc-accent:        #00C6E0;   /* text-safe at body size here */
+  --bc-accent-ink:    #00C6E0;
+  --bc-magenta-ink:   #EC4699;   /* text-safe at body size here */
+  --bc-on-accent:     #050B16;
+
+  /* NEW PATTERN: hairline is 1.36:1 — fine for dividers, fails the
+     3:1 floor for input borders and other meaningful UI edges. */
+  --np-border-strong: #3D5170;
+  --np-focus:         #00C6E0;   /* 9.53:1 on canvas — passes */
+  --np-scrim:         rgba(5, 11, 22, 0.72);
+}
+
+/* --- Light mode: warm paper-neutral, not grey --- */
+[data-mode="light"] {
+  --bc-canvas:        #FAFBFC;
+  --bc-surface:       #FFFFFF;
+  --bc-surface-alt:   #F3F1EC;   /* Surface Recessed */
+  --bc-hairline:      #E4E1D9;
+  --bc-text-1:        #050B16;
+  --bc-text-2:        #5B6472;
+  --bc-text-3:        #8B93A0;
+  --bc-accent:        #00C6E0;   /* graphic use only */
+  --bc-accent-ink:    #007A94;   /* Cyan Ink — any cyan text */
+  --bc-magenta-ink:   #B62E71;   /* Magenta Ink — any magenta text */
+  --bc-on-accent:     #050B16;
+
+  --np-border-strong: #A9A398;
+  /* NEW PATTERN: the spec assigns light-mode focus rings to pure cyan
+     at 2.00:1. That fails WCAG 1.4.11 (3:1). Ink is used instead. */
+  --np-focus:         #007A94;   /* 4.81:1 — passes */
+  --np-scrim:         rgba(5, 11, 22, 0.42);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--np-space-8); /* H41 — sticky bar must not cover focus */
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--bc-canvas);
+  color: var(--bc-text-1);
+  font-family: var(--bc-font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color var(--np-dur-large) var(--np-ease-inout),
+              color var(--np-dur-large) var(--np-ease-inout);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Grain, not glow. Fixed overlay, never intercepts a pointer. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: var(--np-grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+p, li { text-wrap: pretty; }
+h1, h2, h3, h4 { text-wrap: balance; }
+
+a { color: var(--bc-accent-ink); text-decoration: underline; text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible {
+  outline: 2px solid var(--np-focus);
+  outline-offset: 3px;
+  border-radius: var(--np-radius-sm);
+}
+:focus:not(:focus-visible) { outline: none; }
+
+.skip {
+  position: absolute; left: var(--np-space-4); top: var(--np-space-4);
+  transform: translateY(-200%);
+  background: var(--bc-surface); color: var(--bc-text-1);
+  border: 1px solid var(--np-border-strong);
+  padding: var(--np-space-3) var(--np-space-4);
+  border-radius: var(--np-radius-md);
+  z-index: 100; text-decoration: none;
+  font-family: var(--bc-font-mono); font-size: 0.8125rem;
+}
+.skip:focus { transform: translateY(0); }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ============================================================
+   TYPE ROLES
+   ============================================================ */
+.display {
+  font-family: var(--bc-font-display);
+  font-weight: 700;
+  font-size: clamp(2.75rem, 8.2vw, 4.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  font-variation-settings: "wdth" 92;
+  margin: 0;
+}
+h2.h1 {
+  font-family: var(--bc-font-display); font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05;
+  letter-spacing: -0.02em; margin: 0;
+}
+h3.h3 {
+  font-family: var(--bc-font-display); font-weight: 600;
+  font-size: clamp(1.35rem, 2.6vw, 1.75rem); line-height: 1.2;
+  letter-spacing: -0.01em; margin: 0 0 var(--np-space-3);
+}
+h4.h4 {
+  font-family: var(--bc-font-display); font-weight: 600;
+  font-size: 1.1875rem; line-height: 1.3; margin: 0 0 var(--np-space-2);
+}
+.eyebrow {
+  font-family: var(--bc-font-mono); font-size: 0.8125rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--bc-text-2); margin: 0;
+}
+.meta {
+  font-family: var(--bc-font-mono); font-size: 0.75rem;
+  color: var(--bc-text-2); letter-spacing: 0.01em;
+}
+.lead { font-size: 1.125rem; color: var(--bc-text-2); max-width: var(--np-measure); }
+.prose { max-width: var(--np-measure); color: var(--bc-text-2); }
+.prose strong { color: var(--bc-text-1); font-weight: 600; }
+.stat-num {
+  font-family: var(--bc-font-display); font-weight: 700;
+  font-size: clamp(2.25rem, 5vw, 3.25rem); line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.num { font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   SHELL
+   ============================================================ */
+.shell {
+  max-width: 1240px; margin: 0 auto;
+  padding: 0 var(--np-space-5) var(--np-space-9);
+}
+@media (min-width: 900px) {
+  .shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: var(--np-space-8); padding-inline: var(--np-space-7); }
+}
+
+/* --- Rail: 8 items, inside Miller's 7±2 --- */
+.rail { display: none; }
+@media (min-width: 900px) {
+  .rail {
+    display: block; position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto; padding: var(--np-space-8) 0 var(--np-space-6);
+  }
+}
+.rail ol { list-style: none; margin: var(--np-space-4) 0 0; padding: 0; }
+.rail li { margin-bottom: 1px; }
+.rail a {
+  display: flex; gap: var(--np-space-3); align-items: baseline;
+  padding: 0.5rem var(--np-space-3);
+  min-height: 24px;
+  font-size: 0.875rem; text-decoration: none;
+  color: var(--bc-text-2);
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--np-radius-sm) var(--np-radius-sm) 0;
+  transition: color var(--np-dur-micro) var(--np-ease-out),
+              border-color var(--np-dur-micro) var(--np-ease-out),
+              background-color var(--np-dur-micro) var(--np-ease-out);
+}
+.rail a:hover { color: var(--bc-text-1); background: var(--bc-surface); }
+.rail a .n { font-family: var(--bc-font-mono); font-size: 0.6875rem; color: var(--bc-text-3); }
+.rail a[aria-current="true"] {
+  color: var(--bc-text-1); border-left-color: var(--bc-accent); background: var(--bc-surface);
+}
+.rail a[aria-current="true"] .n { color: var(--bc-accent-ink); }
+
+main { padding-top: var(--np-space-6); }
+
+/* ============================================================
+   TOP BAR + MODE SWITCH
+   ============================================================ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; flex-wrap: wrap; gap: var(--np-space-4);
+  align-items: center; justify-content: space-between;
+  padding: var(--np-space-3) 0;
+  background: color-mix(in srgb, var(--bc-canvas) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--bc-hairline);
+  margin-bottom: var(--np-space-6);
+}
+.wordmark {
+  font-family: var(--bc-font-display); font-weight: 700; font-size: 1.0625rem;
+  letter-spacing: -0.01em; display: flex; align-items: center; gap: var(--np-space-3);
+}
+.wordmark .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--bc-cyan); flex: none; }
+
+/* Segmented control — uniform connectedness: one container, two children */
+.seg {
+  display: inline-flex; padding: 3px; gap: 3px;
+  border: 1px solid var(--bc-hairline); border-radius: var(--np-radius-md);
+  background: var(--bc-surface);
+}
+.seg button {
+  font-family: var(--bc-font-mono); font-size: 0.75rem; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.5rem 0.875rem; min-height: 34px; min-width: 68px;
+  border: 0; border-radius: var(--np-radius-sm); cursor: pointer;
+  background: transparent; color: var(--bc-text-2);
+  transition: color var(--np-dur-micro) var(--np-ease-out),
+              background-color var(--np-dur-micro) var(--np-ease-out);
+}
+.seg button:hover { color: var(--bc-text-1); }
+.seg button[aria-pressed="true"] { background: var(--bc-accent); color: var(--bc-on-accent); }
+[data-mode="light"] .seg button[aria-pressed="true"] { background: var(--bc-accent-ink); color: #FFFFFF; }
+.seg button:active { transform: translateY(1px); }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero { padding: var(--np-space-7) 0 var(--np-space-8); }
+.hero .display { margin: var(--np-space-4) 0 var(--np-space-5); }
+.hero .display em { font-style: normal; color: var(--bc-accent-ink); }
+.hero-foot {
+  display: flex; flex-wrap: wrap; gap: var(--np-space-5) var(--np-space-7);
+  margin-top: var(--np-space-6); padding-top: var(--np-space-5);
+  border-top: 1px solid var(--bc-hairline);
+}
+.hero-stat { min-width: 108px; }
+.hero-stat .lbl { display: block; margin-top: var(--np-space-2); }
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+section { padding: var(--np-space-8) 0; border-top: 1px solid var(--bc-hairline); }
+.sec-head { display: flex; gap: var(--np-space-4); align-items: baseline; margin-bottom: var(--np-space-5); flex-wrap: wrap; }
+.sec-head .n {
+  font-family: var(--bc-font-mono); font-size: 0.8125rem; color: var(--bc-text-3);
+  letter-spacing: 0.06em; padding-top: 0.35em;
+}
+.sec-intro { margin: 0 0 var(--np-space-6); }
+
+/* ============================================================
+   TOKEN CARDS (reflow to 1 col at 320px, no horizontal scroll)
+   ============================================================ */
+.grid { display: grid; gap: var(--np-space-4); grid-template-columns: 1fr; }
+@media (min-width: 560px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1080px) { .grid.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 620px) { .grid.g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1080px) { .grid.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.card {
+  background: var(--bc-surface);
+  border: 1px solid var(--bc-hairline);   /* hairline, never a shadow */
+  border-radius: var(--np-radius-lg);
+  padding: var(--np-space-5);
+  display: flex; flex-direction: column; gap: var(--np-space-3);
+}
+
+.chip {
+  height: 76px; border-radius: var(--np-radius-md);
+  border: 1px solid var(--bc-hairline);
+  display: flex; align-items: flex-end; padding: var(--np-space-3);
+}
+.chip.tall { height: 112px; }
+
+.tok-name { font-family: var(--bc-font-display); font-weight: 600; font-size: 1.0625rem; margin: 0; }
+.tok-role { font-size: 0.875rem; color: var(--bc-text-2); margin: 0; flex: 1 1 auto; }
+
+.hexrow { display: flex; align-items: center; gap: var(--np-space-2); flex-wrap: wrap; }
+.hex {
+  font-family: var(--bc-font-mono); font-size: 0.8125rem; letter-spacing: 0.02em;
+  color: var(--bc-text-1);
+}
+
+/* Copy button — 24px min target, feedback under 100ms */
+.copy {
+  font-family: var(--bc-font-mono); font-size: 0.6875rem; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: transparent; color: var(--bc-text-2);
+  border: 1px solid var(--bc-hairline); border-radius: var(--np-radius-sm);
+  padding: 0.3rem 0.55rem; min-height: 26px; cursor: pointer;
+  transition: color var(--np-dur-micro) var(--np-ease-out),
+              border-color var(--np-dur-micro) var(--np-ease-out);
+}
+.copy:hover { color: var(--bc-text-1); border-color: var(--np-border-strong); }
+.copy:active { transform: translateY(1px); }
+.copy[data-state="done"] { color: var(--bc-accent-ink); border-color: var(--bc-accent-ink); }
+.copy[data-state="failed"] { color: var(--bc-magenta-ink); border-color: var(--bc-magenta-ink); }
+
+/* --- The contrast bench: verdicts pair colour with a glyph and a word --- */
+.ratio {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--np-space-3); padding-top: var(--np-space-3);
+  border-top: 1px solid var(--bc-hairline);
+}
+.ratio-val { font-family: var(--bc-font-mono); font-size: 1.0625rem; font-variant-numeric: tabular-nums; }
+.ratio-lbl { font-family: var(--bc-font-mono); font-size: 0.6875rem; color: var(--bc-text-2); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.verdict {
+  display: inline-flex; align-items: center; gap: 0.4em;
+  font-family: var(--bc-font-mono); font-size: 0.6875rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 0.25rem 0.5rem; border-radius: var(--np-radius-sm);
+  border: 1px solid var(--bc-hairline); color: var(--bc-text-2);
+}
+.verdict .g { font-size: 0.9em; }
+.verdict[data-v="pass"] { color: var(--bc-text-1); border-color: var(--np-border-strong); }
+.verdict[data-v="fail"] { color: var(--bc-magenta-ink); border-color: var(--bc-magenta-ink); }
+.verdict[data-v="graphic"] { color: var(--bc-text-2); }
+
+.delta {
+  font-family: var(--bc-font-mono); font-size: 0.6875rem; line-height: 1.5;
+  color: var(--bc-magenta-ink);
+  border-left: 2px solid var(--bc-magenta-ink);
+  padding-left: var(--np-space-3); margin: 0;
+}
+
+/* ============================================================
+   TYPE SPECIMENS
+   ============================================================ */
+.spec { border-top: 1px solid var(--bc-hairline); padding: var(--np-space-5) 0; display: grid; gap: var(--np-space-3); }
+@media (min-width: 780px) { .spec { grid-template-columns: 190px minmax(0, 1fr); gap: var(--np-space-5); align-items: baseline; } }
+.spec-meta { font-family: var(--bc-font-mono); font-size: 0.75rem; color: var(--bc-text-2); line-height: 1.6; }
+.spec-meta b { display: block; color: var(--bc-text-1); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.6875rem; margin-bottom: 0.25rem; }
+.sample { overflow-wrap: anywhere; }
+.s-display { font-family: var(--bc-font-display); font-weight: 700; font-size: clamp(2.5rem, 7vw, 4.25rem); line-height: 1; letter-spacing: -0.025em; }
+.s-h1 { font-family: var(--bc-font-display); font-weight: 700; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05; letter-spacing: -0.02em; }
+.s-h2 { font-family: var(--bc-font-display); font-weight: 600; font-size: clamp(1.6rem, 4vw, 2.25rem); line-height: 1.1; }
+.s-h3 { font-family: var(--bc-font-display); font-weight: 600; font-size: 1.75rem; line-height: 1.2; }
+.s-h4 { font-family: var(--bc-font-display); font-weight: 600; font-size: 1.375rem; line-height: 1.3; }
+.s-bodylg { font-size: 1.125rem; line-height: 1.6; max-width: var(--np-measure); }
+.s-body { font-size: 1rem; line-height: 1.65; max-width: 66ch; }
+.s-eyebrow { font-family: var(--bc-font-mono); font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.s-stat { font-family: var(--bc-font-display); font-weight: 700; font-size: 3.25rem; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.s-caption { font-family: var(--bc-font-mono); font-size: 0.75rem; color: var(--bc-text-2); }
+
+/* ============================================================
+   SIGNATURE MOTION: voice pulse
+   ============================================================ */
+.pulse { display: inline-flex; align-items: flex-end; gap: 3px; height: 22px; }
+.pulse span {
+  display: block; width: 3px; height: 100%; border-radius: 2px;
+  background: var(--bc-accent-ink);
+  transform-origin: bottom center;
+  transform: scaleY(0.28);
+  animation: breathe 1100ms var(--np-ease-inout) infinite;
+}
+.pulse span:nth-child(1) { animation-delay: 0ms; }
+.pulse span:nth-child(2) { animation-delay: 120ms; }
+.pulse span:nth-child(3) { animation-delay: 240ms; }
+.pulse span:nth-child(4) { animation-delay: 120ms; }
+.pulse span:nth-child(5) { animation-delay: 0ms; }
+.pulse.lg { height: 46px; gap: 5px; }
+.pulse.lg span { width: 5px; }
+@keyframes breathe {
+  0%, 100% { transform: scaleY(0.24); }
+  50%      { transform: scaleY(1); }
+}
+.pulse[data-still="true"] span { animation: none; }
+.pulse[data-still="true"] span:nth-child(1) { transform: scaleY(0.35); }
+.pulse[data-still="true"] span:nth-child(2) { transform: scaleY(0.7); }
+.pulse[data-still="true"] span:nth-child(3) { transform: scaleY(1); }
+.pulse[data-still="true"] span:nth-child(4) { transform: scaleY(0.7); }
+.pulse[data-still="true"] span:nth-child(5) { transform: scaleY(0.35); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse span { animation: none !important; }
+  .pulse span:nth-child(1) { transform: scaleY(0.35); }
+  .pulse span:nth-child(2) { transform: scaleY(0.7); }
+  .pulse span:nth-child(3) { transform: scaleY(1); }
+  .pulse span:nth-child(4) { transform: scaleY(0.7); }
+  .pulse span:nth-child(5) { transform: scaleY(0.35); }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.recomputing {
+  display: inline-flex; align-items: center; gap: var(--np-space-3);
+  font-family: var(--bc-font-mono); font-size: 0.75rem; color: var(--bc-text-2);
+  opacity: 0; transition: opacity var(--np-dur-micro) var(--np-ease-out);
+}
+.recomputing[data-on="true"] { opacity: 1; }
+
+/* ============================================================
+   COMPONENTS + STATES
+   ============================================================ */
+.btn {
+  font-family: var(--bc-font-body); font-size: 0.9375rem; font-weight: 500;
+  padding: 0.6875rem 1.25rem; min-height: 44px;
+  border-radius: var(--np-radius-md); border: 1px solid transparent;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--np-space-3);
+  transition: transform var(--np-dur-micro) var(--np-ease-out),
+              opacity var(--np-dur-micro) var(--np-ease-out),
+              background-color var(--np-dur-micro) var(--np-ease-out),
+              border-color var(--np-dur-micro) var(--np-ease-out);
+}
+.btn-primary { background: var(--bc-accent); color: var(--bc-on-accent); font-weight: 600; }
+[data-mode="light"] .btn-primary { background: var(--bc-accent-ink); color: #FFFFFF; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-secondary { background: transparent; color: var(--bc-text-1); border-color: var(--np-border-strong); }
+.btn-secondary:hover { border-color: var(--bc-text-2); }
+.btn-ghost { background: transparent; color: var(--bc-text-2); }
+.btn-ghost:hover { color: var(--bc-text-1); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.42; cursor: not-allowed; transform: none; }
+.btn[data-loading="true"] { pointer-events: none; }
+
+.states { display: flex; flex-wrap: wrap; gap: var(--np-space-3); align-items: center; }
+.state-note { font-family: var(--bc-font-mono); font-size: 0.6875rem; color: var(--bc-text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Form field */
+.field { display: grid; gap: var(--np-space-2); max-width: 420px; }
+.field label { font-size: 0.875rem; font-weight: 500; }
+.field .hint { font-family: var(--bc-font-mono); font-size: 0.6875rem; color: var(--bc-text-2); }
+.field input {
+  font-family: var(--bc-font-body); font-size: 1rem;
+  padding: 0.6875rem 0.875rem; min-height: 44px;
+  background: var(--bc-surface-alt); color: var(--bc-text-1);
+  border: 1px solid var(--np-border-strong);   /* 3:1 edge, not the hairline */
+  border-radius: var(--np-radius-md);
+  transition: border-color var(--np-dur-micro) var(--np-ease-out);
+}
+.field input::placeholder { color: var(--bc-text-3); }
+.field input[aria-invalid="true"] { border-color: var(--bc-magenta-ink); }
+.err {
+  display: none; align-items: flex-start; gap: 0.4em;
+  font-size: 0.8125rem; color: var(--bc-magenta-ink);
+}
+.err[data-on="true"] { display: flex; }
+
+/* Four states demo */
+.state-tile {
+  border: 1px solid var(--bc-hairline); border-radius: var(--np-radius-lg);
+  background: var(--bc-surface); padding: var(--np-space-5);
+  min-height: 172px; display: flex; flex-direction: column; gap: var(--np-space-3);
+  justify-content: center;
+}
+.skel { display: grid; gap: var(--np-space-3); }
+.skel i {
+  display: block; height: 11px; border-radius: 3px;
+  background: var(--bc-surface-alt);
+  border: 1px solid var(--bc-hairline);
+  animation: shim 1400ms var(--np-ease-inout) infinite;
+}
+.skel i:nth-child(1) { width: 62%; }
+.skel i:nth-child(2) { width: 92%; }
+.skel i:nth-child(3) { width: 74%; }
+@keyframes shim { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* Rules + do/don't */
+.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--np-space-4); }
+.rules li {
+  display: grid; grid-template-columns: auto minmax(0,1fr); gap: var(--np-space-4);
+  align-items: start;
+  border-left: 2px solid var(--bc-accent); padding-left: var(--np-space-4);
+  max-width: var(--np-measure);
+}
+.rules .k { font-family: var(--bc-font-mono); font-size: 0.6875rem; color: var(--bc-text-3); padding-top: 0.35em; }
+
+.dd { display: grid; gap: var(--np-space-5); }
+@media (min-width: 720px) { .dd { grid-template-columns: 1fr 1fr; } }
+.dd h4 { display: flex; align-items: center; gap: 0.5em; }
+.dd ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--np-space-3); }
+.dd li { display: grid; grid-template-columns: 1.1em minmax(0,1fr); gap: var(--np-space-3); font-size: 0.9375rem; color: var(--bc-text-2); }
+.dd .g { font-family: var(--bc-font-mono); color: var(--bc-text-3); }
+.dd .do .g { color: var(--bc-accent-ink); }
+.dd .dont .g { color: var(--bc-magenta-ink); }
+
+/* Open items / progress */
+.progress-track { height: 4px; border-radius: 2px; background: var(--bc-surface-alt); border: 1px solid var(--bc-hairline); overflow: hidden; max-width: 320px; }
+.progress-fill { height: 100%; width: 0%; background: var(--bc-accent); }
+.todo { list-style: none; margin: var(--np-space-4) 0 0; padding: 0; display: grid; gap: var(--np-space-3); max-width: var(--np-measure); }
+.todo li { display: grid; grid-template-columns: 1.4em minmax(0,1fr); gap: var(--np-space-3); color: var(--bc-text-2); font-size: 0.9375rem; }
+.todo .box { font-family: var(--bc-font-mono); color: var(--bc-text-3); }
+
+footer { border-top: 1px solid var(--bc-hairline); padding: var(--np-space-6) 0; margin-top: var(--np-space-6); }
+.toast-region { position: fixed; bottom: 0; left: 0; }
+</style>
+</head>
+
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell">
+
+  <!-- ========== RAIL ========== -->
+  <nav class="rail" aria-label="Sections">
+    <p class="eyebrow">Becca</p>
+    <ol>
+      <li><a href="#hues"><span class="n">01</span> Brand hues</a></li>
+      <li><a href="#dark"><span class="n">02</span> Dark mode</a></li>
+      <li><a href="#light"><span class="n">03</span> Light mode</a></li>
+      <li><a href="#type"><span class="n">04</span> Typography</a></li>
+      <li><a href="#motion"><span class="n">05</span> Texture &amp; motion</a></li>
+      <li><a href="#components"><span class="n">06</span> Components</a></li>
+      <li><a href="#rules"><span class="n">07</span> Usage rules</a></li>
+      <li><a href="#audit"><span class="n">08</span> Audit</a></li>
+    </ol>
+  </nav>
+
+  <div>
+    <!-- ========== TOP BAR ========== -->
+    <header class="topbar">
+      <p class="wordmark"><span class="dot" aria-hidden="true"></span> Becca Design System</p>
+      <div style="display:flex; align-items:center; gap:var(--np-space-4);">
+        <span class="recomputing" id="recomputing" aria-hidden="true">
+          <span class="pulse" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+          Recomputing
+        </span>
+        <div class="seg" role="group" aria-label="Canvas mode">
+          <button type="button" id="btn-dark" aria-pressed="true">Dark</button>
+          <button type="button" id="btn-light" aria-pressed="false">Light</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+
+      <!-- ========== HERO ========== -->
+      <div class="hero">
+        <p class="eyebrow">Design Language v3 · Light &amp; dark</p>
+        <h1 class="display">Four hues.<br>Two canvases.<br><em>One contrast check</em><br>that never lies.</h1>
+        <p class="lead">Every colour in Becca is safe or unsafe depending on the canvas underneath it. So this page doesn't publish contrast ratios — it computes them, live, against whichever canvas you're looking at. Flip the switch and watch the verdicts move.</p>
+
+        <div class="hero-foot">
+          <div class="hero-stat">
+            <span class="stat-num" id="hero-canvas-ratio">19.02</span>
+            <span class="meta lbl">Body text on canvas</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-num">4</span>
+            <span class="meta lbl">Locked brand hues</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-num" id="hero-fails">0</span>
+            <span class="meta lbl">Tokens failing AA here</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-num" id="hero-drift">6</span>
+            <span class="meta lbl">Published ratios off</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 01 HUES ========== -->
+      <section id="hues" aria-labelledby="h-hues">
+        <div class="sec-head">
+          <span class="n">01</span>
+          <h2 class="h1" id="h-hues">Locked brand hues</h2>
+        </div>
+        <p class="sec-intro prose">Fixed company identity. Every derived colour on this page is built from these four and nothing else. Introducing a fifth system colour means checking it against <strong>both</strong> canvases first.</p>
+
+        <div class="grid g4">
+          <article class="card">
+            <div class="chip tall" style="background:#00C6E0"></div>
+            <h3 class="tok-name">Electric Cyan</h3>
+            <p class="tok-role">The single functional accent — links, focus, active UI. One highlight per view.</p>
+            <div class="hexrow"><code class="hex">#00C6E0</code><button class="copy" type="button" data-copy="#00C6E0">Copy</button></div>
+          </article>
+          <article class="card">
+            <div class="chip tall" style="background:#EC4699"></div>
+            <h3 class="tok-name">Accent Magenta</h3>
+            <p class="tok-role">Rationed to one moment per page, or retired to data-viz. Never paired with cyan as decoration.</p>
+            <div class="hexrow"><code class="hex">#EC4699</code><button class="copy" type="button" data-copy="#EC4699">Copy</button></div>
+          </article>
+          <article class="card">
+            <div class="chip tall" style="background:#050B16; border-color:#1E2A3D"></div>
+            <h3 class="tok-name">Deep Navy</h3>
+            <p class="tok-role">Dark-mode canvas. Roughly 95% of the surface area in the product.</p>
+            <div class="hexrow"><code class="hex">#050B16</code><button class="copy" type="button" data-copy="#050B16">Copy</button></div>
+          </article>
+          <article class="card">
+            <div class="chip tall" style="background:#FAFBFC; border-color:#E4E1D9"></div>
+            <h3 class="tok-name">Near White</h3>
+            <p class="tok-role">Light-mode canvas. Warm paper-neutral — deliberately not pure grey or pure white.</p>
+            <div class="hexrow"><code class="hex">#FAFBFC</code><button class="copy" type="button" data-copy="#FAFBFC">Copy</button></div>
+          </article>
+        </div>
+
+        <p class="prose" style="margin-top:var(--np-space-5)">The cyan → magenta pairing belongs to the logo mark. Anywhere else it reads as decoration, and decoration is what this system spends its restraint avoiding.</p>
+      </section>
+
+      <!-- ========== 02 DARK ========== -->
+      <section id="dark" aria-labelledby="h-dark">
+        <div class="sec-head">
+          <span class="n">02</span>
+          <h2 class="h1" id="h-dark">Dark mode palette</h2>
+          <span class="meta">canvas <code class="hex">#050B16</code></span>
+        </div>
+        <p class="sec-intro prose">Both accents clear 4.5:1 on navy, so cyan and magenta can carry body-size text here. That freedom does not survive the trip to light mode.</p>
+        <div class="grid g3" id="grid-dark"></div>
+      </section>
+
+      <!-- ========== 03 LIGHT ========== -->
+      <section id="light" aria-labelledby="h-light">
+        <div class="sec-head">
+          <span class="n">03</span>
+          <h2 class="h1" id="h-light">Light mode palette</h2>
+          <span class="meta">canvas <code class="hex">#FAFBFC</code></span>
+        </div>
+        <p class="sec-intro prose">Pure cyan drops to 2.00:1 on paper and pure magenta to 3.43:1. Both stay correct as brand hues for the logo, illustration, data-viz, and large bold type — but the moment either one carries small text, swap in the Ink variant.</p>
+        <div class="grid g3" id="grid-light"></div>
+
+        <div class="card" style="margin-top:var(--np-space-5); max-width:var(--np-measure)">
+          <h4 class="h4">The swap, in one sentence</h4>
+          <p class="tok-role" style="font-size:1rem">This sentence contains <a href="#light">a cyan link</a>. In dark mode it is pure Electric Cyan at 9.53:1. In light mode it is Cyan Ink at 4.81:1. Same role, same token name, different value — which is why nothing in the codebase should ever hardcode <code class="hex">#00C6E0</code> for text.</p>
+        </div>
+      </section>
+
+      <!-- ========== 04 TYPE ========== -->
+      <section id="type" aria-labelledby="h-type">
+        <div class="sec-head">
+          <span class="n">04</span>
+          <h2 class="h1" id="h-type">Typography</h2>
+        </div>
+        <p class="sec-intro prose">One type system across both modes — only colour changes. Bricolage Grotesque makes statements, Geist Sans carries reading, Geist Mono handles labels and data.</p>
+
+        <div class="spec">
+          <p class="spec-meta"><b>Display / Hero</b>Bricolage Grotesque<br>64–72px</p>
+          <p class="sample s-display">Answer on the first ring</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>H1</b>Bricolage Grotesque<br>48px</p>
+          <p class="sample s-h1">Every call, transcribed and scored</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>H2</b>Bricolage Grotesque<br>36px</p>
+          <p class="sample s-h2">Campaign results</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>H3</b>Bricolage Grotesque<br>28px</p>
+          <p class="sample s-h3">Voice and transcription</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>H4</b>Bricolage Grotesque<br>22px</p>
+          <p class="sample s-h4">Retry policy</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>Body Large</b>Geist Sans · 18px<br>Intros, lead paragraphs</p>
+          <p class="sample s-bodylg">Describe the agent you want in plain language. Becca writes the instructions, works out which fields your contact list has to supply, and defines what gets extracted when the call ends.</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>Body</b>Geist Sans · 16px<br>Measure 65–70ch</p>
+          <p class="sample s-body">Reading measure is capped so lines stay between fifty and seventy-five characters. Past that the eye loses its place on the return sweep, and long-form settings copy is exactly where that failure shows up first.</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>Eyebrow / Label</b>Geist Mono · 13px<br>Uppercase, 0.08em</p>
+          <p class="sample s-eyebrow" style="color:var(--bc-text-2)">Scheduled · retry 2 of 3</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>Stat Number</b>Bricolage Grotesque<br>40–56px · tabular</p>
+          <div class="sample">
+            <span class="s-stat">1,284</span>
+            <span class="s-caption" style="display:block; margin-top:var(--np-space-2)">CALLS COMPLETED</span>
+          </div>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>Metadata / Caption</b>Geist Mono · 11–12px</p>
+          <p class="sample s-caption">Updated 03 Aug 2026 · 14:02 WAT</p>
+        </div>
+        <div class="spec">
+          <p class="spec-meta"><b>Tabular figures</b>Anywhere numbers stack</p>
+          <div class="sample" style="font-family:var(--bc-font-mono); font-variant-numeric:tabular-nums; font-size:0.9375rem; line-height:1.9; color:var(--bc-text-2)">
+            19.02<br>&nbsp;9.53<br>&nbsp;4.81<br>&nbsp;2.00
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== 05 MOTION ========== -->
+      <section id="motion" aria-labelledby="h-motion">
+        <div class="sec-head">
+          <span class="n">05</span>
+          <h2 class="h1" id="h-motion">Texture &amp; motion</h2>
+        </div>
+        <p class="sec-intro prose">No glow. Negative space and hairlines do the work effects would otherwise be asked to do.</p>
+
+        <div class="grid">
+          <article class="card">
+            <h4 class="h4">Grain, not glow</h4>
+            <p class="tok-role">A fractal-noise overlay at 4.5% sits on the canvas of this page. It is a fixed layer, never intercepts a pointer, and reads as paper tooth in light mode and film grain in dark.</p>
+            <p class="meta">--np-grain-opacity: 0.045</p>
+          </article>
+          <article class="card">
+            <h4 class="h4">Hairlines, not shadows</h4>
+            <p class="tok-role">Cards get a 1px border in the mode's hairline colour. Anything that needs a <em>meaningful</em> edge — an input, a focus ring — uses the stronger border token instead, because a 1.36:1 hairline can't carry that job.</p>
+            <p class="meta">--bc-hairline / --np-border-strong</p>
+          </article>
+          <article class="card">
+            <h4 class="h4">Voice pulse</h4>
+            <p class="tok-role">The one signature animation: bars breathing in and out. It marks loading and active listening, and it is content-true — this is a voice product, so the loading state looks like a voice.</p>
+            <div style="display:flex; gap:var(--np-space-6); align-items:flex-end; margin-top:var(--np-space-2)">
+              <div>
+                <div class="pulse lg" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+                <p class="meta" style="margin:var(--np-space-3) 0 0">In motion</p>
+              </div>
+              <div>
+                <div class="pulse lg" data-still="true" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+                <p class="meta" style="margin:var(--np-space-3) 0 0">Reduced motion</p>
+              </div>
+            </div>
+          </article>
+          <article class="card">
+            <h4 class="h4">Timing</h4>
+            <p class="tok-role">Micro 130ms for hover and toggle, standard 240ms for menus and modals, large 360ms for canvas changes. Ease-out entering, ease-in exiting, ease-in-out for moves. Only <code class="hex">transform</code> and <code class="hex">opacity</code> animate.</p>
+            <p class="meta">--np-dur-micro / -standard / -large</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== 06 COMPONENTS ========== -->
+      <section id="components" aria-labelledby="h-components">
+        <div class="sec-head">
+          <span class="n">06</span>
+          <h2 class="h1" id="h-components">Components &amp; states</h2>
+        </div>
+        <p class="sec-intro prose">Nothing ships with only a default state. Every interactive element gets hover, focus-visible, active and disabled; everything async also gets loading.</p>
+
+        <h3 class="h3" style="margin-top:var(--np-space-6)">Buttons</h3>
+        <div class="card">
+          <div class="states">
+            <button class="btn btn-primary" type="button">Start campaign</button>
+            <button class="btn btn-secondary" type="button">Save draft</button>
+            <button class="btn btn-ghost" type="button">Cancel</button>
+            <button class="btn btn-primary" type="button" disabled>Start campaign</button>
+            <span class="state-note">disabled</span>
+          </div>
+          <p class="tok-role" style="margin-top:var(--np-space-3)">One primary action per view. On navy, the primary is Electric Cyan with navy text at 9.53:1; on paper it becomes Cyan Ink with white text at 4.81:1, because pure cyan under white text is unreadable.</p>
+          <div class="states" style="margin-top:var(--np-space-3)">
+            <button class="btn btn-primary" type="button" id="demo-async">Place test call</button>
+            <span class="state-note">tap for the loading state</span>
+          </div>
+        </div>
+
+        <h3 class="h3" style="margin-top:var(--np-space-7)">Input</h3>
+        <div class="card">
+          <div class="field">
+            <label for="email">Work email</label>
+            <input type="email" id="email" name="email" inputmode="email" autocomplete="email"
+                   placeholder="you@company.com" aria-describedby="email-hint email-err">
+            <p class="hint" id="email-hint">Results and transcripts are sent here.</p>
+            <p class="err" id="email-err" data-on="false" role="alert">
+              <span aria-hidden="true">✕</span>
+              <span id="email-err-text"></span>
+            </p>
+          </div>
+          <p class="tok-role" style="margin-top:var(--np-space-4)">Label above the input and programmatically bound. Correct <code class="hex">type</code>, <code class="hex">inputmode</code> and <code class="hex">autocomplete</code>. Validation runs on blur and clears the moment the value becomes valid — never on every keystroke, which punishes people mid-typo. The error says what happened and what to do about it.</p>
+        </div>
+
+        <h3 class="h3" style="margin-top:var(--np-space-7)">Four states, every data view</h3>
+        <div class="grid g4">
+          <div class="state-tile">
+            <p class="eyebrow">Empty</p>
+            <p class="tok-role">No campaigns yet. Create one to start dialling your contact list.</p>
+            <button class="btn btn-primary" type="button" style="align-self:flex-start">New campaign</button>
+          </div>
+          <div class="state-tile">
+            <p class="eyebrow">Loading</p>
+            <div class="skel" aria-hidden="true"><i></i><i></i><i></i></div>
+            <p class="meta">Skeleton matches the final layout, so nothing shifts when the data lands.</p>
+          </div>
+          <div class="state-tile">
+            <p class="eyebrow">Error</p>
+            <p class="tok-role" style="color:var(--bc-magenta-ink)">Couldn't load results — the connection dropped mid-request. Your campaign is still running.</p>
+            <button class="btn btn-secondary" type="button" style="align-self:flex-start">Try again</button>
+          </div>
+          <div class="state-tile">
+            <p class="eyebrow">Success</p>
+            <p class="stat-num" style="font-size:2.5rem">318</p>
+            <p class="tok-role">calls completed, 94% reached a person. Export is ready.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== 07 RULES ========== -->
+      <section id="rules" aria-labelledby="h-rules">
+        <div class="sec-head">
+          <span class="n">07</span>
+          <h2 class="h1" id="h-rules">Usage rules</h2>
+        </div>
+
+        <ul class="rules">
+          <li><span class="k">R1</span><span>Cyan is the only functional accent. One colour for active, focus and links — no competing accents.</span></li>
+          <li><span class="k">R2</span><span>Magenta is rationed to one moment per page, or confined entirely to data-viz. On this page it spends that budget on failure states, which should be rare by design.</span></li>
+          <li><span class="k">R3</span><span>Never combine cyan and magenta as a gradient for decoration. That pairing belongs to the logo mark.</span></li>
+          <li><span class="k">R4</span><span>In light mode, always ask whether a colour is carrying text (use the Ink variant) or acting as a large graphic element (the pure hue is fine).</span></li>
+          <li><span class="k">R5</span><span>Both modes are built from the same four hues. Never introduce a fifth system colour without checking it against both canvases.</span></li>
+          <li><span class="k">R6</span><span>Colour is never the only signal. Every state encoded in colour also carries a glyph, a label, or both.</span></li>
+        </ul>
+
+        <h3 class="h3" style="margin-top:var(--np-space-7)">Do / Don't</h3>
+        <div class="dd">
+          <div class="do">
+            <h4 class="h4">Do</h4>
+            <ul>
+              <li><span class="g" aria-hidden="true">✓</span><span>Use Bricolage Grotesque for anything meant to feel like a statement.</span></li>
+              <li><span class="g" aria-hidden="true">✓</span><span>Let type and space carry the premium feeling.</span></li>
+              <li><span class="g" aria-hidden="true">✓</span><span>Use the Ink variants for cyan and magenta body text in light mode.</span></li>
+              <li><span class="g" aria-hidden="true">✓</span><span>Keep both modes built from the same four brand hues.</span></li>
+            </ul>
+          </div>
+          <div class="dont">
+            <h4 class="h4">Don't</h4>
+            <ul>
+              <li><span class="g" aria-hidden="true">✕</span><span>Default to Inter, ever.</span></li>
+              <li><span class="g" aria-hidden="true">✕</span><span>Reach for glow, gradient or shadow to signal quality.</span></li>
+              <li><span class="g" aria-hidden="true">✕</span><span>Ship pure Electric Cyan or Accent Magenta as small text on the paper canvas.</span></li>
+              <li><span class="g" aria-hidden="true">✕</span><span>Let dark and light drift into two different brand feels.</span></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== 08 AUDIT ========== -->
+      <section id="audit" aria-labelledby="h-audit">
+        <div class="sec-head">
+          <span class="n">08</span>
+          <h2 class="h1" id="h-audit">Audit &amp; open items</h2>
+        </div>
+        <p class="sec-intro prose">What the contrast bench found when it recomputed every published ratio, and which tokens this page had to invent to meet the craft floor. The invented ones are namespaced <code class="hex">--np-*</code> so they're impossible to mistake for blessed system tokens.</p>
+
+        <h3 class="h3">Published ratios that don't match the maths</h3>
+        <div class="grid">
+          <article class="card">
+            <h4 class="h4">Dark · Text Primary</h4>
+            <p class="tok-role">Published as 9.5:1. The true ratio for <code class="hex">#FAFBFC</code> on <code class="hex">#050B16</code> is <span class="num">19.02</span>:1 — looks like the cyan row's value was copied up.</p>
+          </article>
+          <article class="card">
+            <h4 class="h4">Dark · Text Secondary &amp; Tertiary</h4>
+            <p class="tok-role">Published 4.6 and 3.0. Actual <span class="num">6.66</span> and <span class="num">3.63</span>. Understated, so nothing unsafe shipped — but the tertiary has more headroom than the doc admits.</p>
+          </article>
+          <article class="card">
+            <h4 class="h4">Light · Text Primary &amp; Secondary</h4>
+            <p class="tok-role">Published 17.9 and 5.4. Actual <span class="num">19.02</span> and <span class="num">5.77</span>.</p>
+          </article>
+          <article class="card">
+            <h4 class="h4">Light · Text Tertiary — the one that matters</h4>
+            <p class="tok-role" style="color:var(--bc-magenta-ink)">Published 3.1. Actual <span class="num">2.99</span>. It's rounded across the line. Disabled controls are exempt from WCAG, but placeholder text is not — so <code class="hex">#8B93A0</code> should not be used for placeholders in light mode. Darkening it to roughly <code class="hex">#767E8B</code> clears 3:1 with no change to the brand feel.</p>
+          </article>
+        </div>
+
+        <h3 class="h3" style="margin-top:var(--np-space-7)">New patterns to promote into the source doc</h3>
+        <div class="grid">
+          <article class="card">
+            <h4 class="h4">Focus ring, light mode</h4>
+            <p class="tok-role">§3 assigns light-mode focus rings to pure cyan at <span class="num">2.00</span>:1. WCAG 1.4.11 asks for 3:1 on focus indicators, so that's a fail. This page uses Cyan Ink (<span class="num">4.81</span>:1) instead. Same fix applies to any cyan icon or border that carries meaning rather than decoration.</p>
+            <p class="meta">--np-focus</p>
+          </article>
+          <article class="card">
+            <h4 class="h4">Border Strong</h4>
+            <p class="tok-role">Hairlines land at 1.36:1 (dark) and 1.26:1 (light). Correct for dividers, too weak for input borders and other meaningful edges, which need 3:1. Added <code class="hex">#3D5170</code> / <code class="hex">#A9A398</code>.</p>
+            <p class="meta">--np-border-strong</p>
+          </article>
+          <article class="card">
+            <h4 class="h4">Spacing, radius, motion scales</h4>
+            <p class="tok-role">The system defines textures and a signature animation but no numeric scales. Nine spacing steps, three radii, three durations and three easings were needed to build anything at all. These are proposals, not decisions.</p>
+            <p class="meta">--np-space-* / --np-radius-* / --np-dur-*</p>
+          </article>
+          <article class="card">
+            <h4 class="h4">Semantic status colours</h4>
+            <p class="tok-role">There's no success or danger role, and magenta is rationed to one moment per page — so it can't be the general error colour. This page routes failure through magenta plus a glyph plus a word, but a product with forms will need a proper danger token checked against both canvases.</p>
+            <p class="meta">unresolved</p>
+          </article>
+        </div>
+
+        <h3 class="h3" style="margin-top:var(--np-space-7)">Open items</h3>
+        <p class="meta" id="todo-count">0 of 4 resolved</p>
+        <div class="progress-track" role="presentation"><div class="progress-fill" id="todo-fill"></div></div>
+        <ul class="todo">
+          <li><span class="box" aria-hidden="true">[ ]</span><span>Link the Figma or production token file once these values are wired up.</span></li>
+          <li><span class="box" aria-hidden="true">[ ]</span><span>Record any client-specific theme overrides — the Sylvastar prototype, if it diverges from this base.</span></li>
+          <li><span class="box" aria-hidden="true">[ ]</span><span>Correct the six published ratios in §2 and §3, and darken light-mode Text Tertiary past 3:1.</span></li>
+          <li><span class="box" aria-hidden="true">[ ]</span><span>Promote or reject the four <code class="hex">--np-*</code> token groups above.</span></li>
+        </ul>
+      </section>
+
+      <footer>
+        <p class="meta">Becca Design System · companion to Design Language v3 · living document, last updated July 2026.<br>Contrast ratios on this page are computed at render time from the token values themselves, not transcribed.</p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<div class="toast-region"><p class="visually-hidden" id="live" role="status" aria-live="polite"></p></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- WCAG maths ---------- */
+  function chan(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+  function lum(hex) {
+    var h = hex.replace('#', '');
+    return 0.2126 * chan(parseInt(h.slice(0, 2), 16)) +
+           0.7152 * chan(parseInt(h.slice(2, 4), 16)) +
+           0.0722 * chan(parseInt(h.slice(4, 6), 16));
+  }
+  function ratio(a, b) {
+    var x = lum(a), y = lum(b), hi = Math.max(x, y), lo = Math.min(x, y);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+  function fmt(n) { return n.toFixed(2); }
+
+  var CANVAS = { dark: '#050B16', light: '#FAFBFC' };
+
+  /* ---------- Token catalogue ----------
+     kind: 'text'    → needs 4.5:1
+           'ui'      → needs 3:1
+           'surface' → structural, no threshold                       */
+  var TOKENS = {
+    dark: [
+      { n: 'Surface',          hex: '#0E1826', kind: 'surface', role: 'Cards, panels, raised sections.' },
+      { n: 'Surface Elevated', hex: '#131F33', kind: 'surface', role: 'Modals, popovers, dropdowns.' },
+      { n: 'Hairline',         hex: '#1E2A3D', kind: 'surface', role: 'Dividers and card outlines — used instead of shadow.' },
+      { n: 'Text Primary',     hex: '#FAFBFC', kind: 'text', doc: 9.5,  role: 'Headlines and body copy.' },
+      { n: 'Text Secondary',   hex: '#8A97AC', kind: 'text', doc: 4.6,  role: 'Captions, metadata, muted copy.' },
+      { n: 'Text Tertiary',    hex: '#5C6B80', kind: 'ui',   doc: 3.0,  role: 'Placeholder and disabled states only.' },
+      { n: 'Accent — Cyan',    hex: '#00C6E0', kind: 'text', doc: 9.5,  role: 'Links, focus rings, active nav, icons. Safe at body size here.' },
+      { n: 'Accent — Magenta', hex: '#EC4699', kind: 'text', doc: 5.5,  role: 'The one rationed highlight. Safe at body size here.' }
+    ],
+    light: [
+      { n: 'Surface',           hex: '#FFFFFF', kind: 'surface', role: 'Cards, panels, raised sections.' },
+      { n: 'Surface Recessed',  hex: '#F3F1EC', kind: 'surface', role: 'Input fields and inset sections.' },
+      { n: 'Hairline',          hex: '#E4E1D9', kind: 'surface', role: 'Dividers and card outlines — used instead of shadow.' },
+      { n: 'Text Primary',      hex: '#050B16', kind: 'text', doc: 17.9, role: 'Headlines and body copy.' },
+      { n: 'Text Secondary',    hex: '#5B6472', kind: 'text', doc: 5.4,  role: 'Captions, metadata, muted copy.' },
+      { n: 'Text Tertiary',     hex: '#8B93A0', kind: 'ui',   doc: 3.1,  role: 'Placeholder and disabled states only.' },
+      { n: 'Accent — Cyan',     hex: '#00C6E0', kind: 'graphic', doc: 2.0, role: 'Logo, illustration, data-viz, large bold type. Not for text or focus rings on paper.' },
+      { n: 'Cyan Ink',          hex: '#007A94', kind: 'text', doc: 4.8,  role: 'Links, focus rings, any cyan at body size.' },
+      { n: 'Accent — Magenta',  hex: '#EC4699', kind: 'graphic', doc: 3.4, role: 'Large headings at 24px bold and above. Below AA for body text.' },
+      { n: 'Magenta Ink',       hex: '#B62E71', kind: 'text', doc: 5.6,  role: 'Any magenta at body size.' }
+    ]
+  };
+
+  var THRESH = { text: 4.5, ui: 3.0 };
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function buildCard(t, canvas) {
+    var r = ratio(t.hex, canvas);
+    var need = THRESH[t.kind];
+    var verdict, glyph, label, vlabel;
+
+    if (t.kind === 'surface') {
+      verdict = 'graphic'; glyph = '◇'; label = 'Structural'; vlabel = 'structural token, no contrast threshold';
+    } else if (t.kind === 'graphic') {
+      verdict = 'graphic'; glyph = '◇'; label = 'Graphic only'; vlabel = 'graphic use only';
+    } else if (r >= need) {
+      verdict = 'pass'; glyph = '✓'; label = t.kind === 'text' ? 'Pass AA text' : 'Pass 3:1';
+      vlabel = 'passes';
+    } else {
+      verdict = 'fail'; glyph = '✕'; label = t.kind === 'text' ? 'Fails AA text' : 'Fails 3:1';
+      vlabel = 'fails';
+    }
+
+    var drift = '';
+    if (typeof t.doc === 'number' && Math.abs(t.doc - r) >= 0.1) {
+      drift = '<p class="delta">Doc publishes ' + t.doc.toFixed(1) + ':1 — computed ' + fmt(r) + ':1</p>';
+    }
+
+    var ratioLine = (t.kind === 'surface')
+      ? '<span class="ratio-lbl">vs canvas</span>'
+      : '<span class="ratio-lbl">vs canvas</span>';
+
+    var border = (t.kind === 'surface') ? 'var(--bc-hairline)' : 'transparent';
+
+    return '<article class="card">' +
+      '<div class="chip" style="background:' + t.hex + '; border-color:' + border + '"></div>' +
+      '<h3 class="tok-name">' + esc(t.n) + '</h3>' +
+      '<p class="tok-role">' + esc(t.role) + '</p>' +
+      '<div class="hexrow"><code class="hex">' + t.hex + '</code>' +
+      '<button class="copy" type="button" data-copy="' + t.hex + '">Copy</button></div>' +
+      '<div class="ratio">' +
+        '<span><span class="ratio-val">' + fmt(r) + '</span><span class="ratio-lbl">&nbsp;:1</span><br>' + ratioLine + '</span>' +
+        '<span class="verdict" data-v="' + verdict + '">' +
+          '<span class="g" aria-hidden="true">' + glyph + '</span>' + esc(label) +
+          '<span class="visually-hidden"> — ' + fmt(r) + ' to 1, ' + vlabel + '</span>' +
+        '</span>' +
+      '</div>' + drift +
+    '</article>';
+  }
+
+  function renderGrid(id, mode) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var canvas = CANVAS[mode];
+    el.innerHTML = TOKENS[mode].map(function (t) { return buildCard(t, canvas); }).join('');
+  }
+
+  /* ---------- Hero readout ---------- */
+  function updateHero(mode) {
+    var canvas = CANVAS[mode];
+    var primary = mode === 'dark' ? '#FAFBFC' : '#050B16';
+    document.getElementById('hero-canvas-ratio').textContent = fmt(ratio(primary, canvas));
+
+    var fails = TOKENS[mode].filter(function (t) {
+      if (t.kind !== 'text' && t.kind !== 'ui') return false;
+      return ratio(t.hex, canvas) < THRESH[t.kind];
+    }).length;
+    document.getElementById('hero-fails').textContent = String(fails);
+
+    var drift = 0;
+    ['dark', 'light'].forEach(function (m) {
+      TOKENS[m].forEach(function (t) {
+        if (typeof t.doc === 'number' && Math.abs(t.doc - ratio(t.hex, CANVAS[m])) >= 0.1) drift++;
+      });
+    });
+    document.getElementById('hero-drift').textContent = String(drift);
+  }
+
+  /* ---------- Mode switching ---------- */
+  var root = document.documentElement;
+  var bDark = document.getElementById('btn-dark');
+  var bLight = document.getElementById('btn-light');
+  var recomputing = document.getElementById('recomputing');
+  var live = document.getElementById('live');
+  var pulseTimer = null;
+
+  function setMode(mode, announce) {
+    root.setAttribute('data-mode', mode);
+    bDark.setAttribute('aria-pressed', String(mode === 'dark'));
+    bLight.setAttribute('aria-pressed', String(mode === 'light'));
+    updateHero(mode);
+
+    if (announce) {
+      // Feedback inside 100ms; the pulse is the signature loading motion.
+      recomputing.setAttribute('data-on', 'true');
+      clearTimeout(pulseTimer);
+      pulseTimer = setTimeout(function () { recomputing.setAttribute('data-on', 'false'); }, 640);
+      live.textContent = mode === 'dark'
+        ? 'Dark canvas. Contrast recomputed against #050B16.'
+        : 'Light canvas. Contrast recomputed against #FAFBFC.';
+    }
+  }
+
+  bDark.addEventListener('click', function () { setMode('dark', true); });
+  bLight.addEventListener('click', function () { setMode('light', true); });
+
+  /* ---------- Copy to clipboard ---------- */
+  function flash(btn, text, state) {
+    var prev = btn.textContent;
+    btn.textContent = text;
+    btn.setAttribute('data-state', state);
+    setTimeout(function () { btn.textContent = prev; btn.removeAttribute('data-state'); }, 1400);
+  }
+
+  function legacyCopy(value) {
+    var ta = document.createElement('textarea');
+    ta.value = value;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.copy') : null;
+    if (!btn) return;
+    var value = btn.getAttribute('data-copy');
+
+    function ok() { flash(btn, 'Copied', 'done'); live.textContent = 'Copied ' + value; }
+    function fail() {
+      flash(btn, 'Blocked', 'failed');
+      live.textContent = 'Clipboard is blocked in this frame. Select ' + value + ' and copy manually.';
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(ok, function () { legacyCopy(value) ? ok() : fail(); });
+    } else {
+      legacyCopy(value) ? ok() : fail();
+    }
+  });
+
+  /* ---------- Email field: validate on blur, clear on change ---------- */
+  var email = document.getElementById('email');
+  var errBox = document.getElementById('email-err');
+  var errText = document.getElementById('email-err-text');
+
+  function emailValid(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
+
+  function showErr(msg) {
+    errText.textContent = msg;
+    errBox.setAttribute('data-on', 'true');
+    email.setAttribute('aria-invalid', 'true');
+  }
+  function clearErr() {
+    errBox.setAttribute('data-on', 'false');
+    email.removeAttribute('aria-invalid');
+  }
+
+  if (email) {
+    email.addEventListener('blur', function () {
+      var v = email.value.trim();
+      if (!v) { clearErr(); return; }
+      if (!emailValid(v)) {
+        showErr(v.indexOf('@') === -1
+          ? 'This needs an @ — try you@company.com.'
+          : 'That address is missing a domain ending, like .com.');
+      } else { clearErr(); }
+    });
+    email.addEventListener('input', function () {
+      if (errBox.getAttribute('data-on') === 'true' && emailValid(email.value)) clearErr();
+    });
+  }
+
+  /* ---------- Async button: loading, then success ---------- */
+  var demo = document.getElementById('demo-async');
+  if (demo) {
+    var original = demo.innerHTML;
+    demo.addEventListener('click', function () {
+      if (demo.getAttribute('data-loading') === 'true') return;
+      demo.setAttribute('data-loading', 'true');
+      demo.setAttribute('aria-busy', 'true');
+      demo.innerHTML = '<span class="pulse" aria-hidden="true" style="height:14px"><span></span><span></span><span></span><span></span><span></span></span> Dialling';
+      live.textContent = 'Placing test call.';
+      setTimeout(function () {
+        demo.innerHTML = 'Call connected';
+        live.textContent = 'Test call connected.';
+        setTimeout(function () {
+          demo.innerHTML = original;
+          demo.removeAttribute('data-loading');
+          demo.removeAttribute('aria-busy');
+        }, 1600);
+      }, 1800);
+    });
+  }
+
+  /* ---------- Open items progress ---------- */
+  (function () {
+    var fill = document.getElementById('todo-fill');
+    if (fill) fill.style.width = '0%';
+  })();
+
+  /* ---------- Scrollspy ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+
+  if ('IntersectionObserver' in window && sections.length) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        links.forEach(function (a) {
+          a.setAttribute('aria-current', a.getAttribute('href') === '#' + entry.target.id ? 'true' : 'false');
+        });
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    sections.forEach(function (s) { io.observe(s); });
+  }
+
+  /* ---------- Boot ---------- */
+  var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  renderGrid('grid-dark', 'dark');
+  renderGrid('grid-light', 'light');
+  setMode(prefersLight ? 'light' : 'dark', false);
+})();
+</script>
+</body>
+</html>

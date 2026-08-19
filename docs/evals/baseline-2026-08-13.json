@@ -1,0 +1,703 @@
+{
+  "batch": "baseline-2026-08-13",
+  "rubric_version": 1,
+  "generated_at": "2026-08-13T08:23:51.480441+00:00",
+  "criteria": [
+    {
+      "id": "annotation_leak",
+      "title": "Annotation leakage",
+      "kind": "mechanical",
+      "definition": "The agent spoke markup aloud: mustache ({{...}}), a bracketed field reference ([key]), or a [value: label] annotation."
+    },
+    {
+      "id": "long_turn",
+      "title": "Turn length",
+      "kind": "mechanical",
+      "definition": "An agent turn ran past the 'one or two sentences' rule (flagged at three or more)."
+    },
+    {
+      "id": "ack_tic",
+      "title": "Acknowledgement tic",
+      "kind": "mechanical",
+      "definition": "Consecutive agent turns opened with the same acknowledgement ('Got it, thanks X' every turn)."
+    },
+    {
+      "id": "verbatim_repeat",
+      "title": "Verbatim repetition",
+      "kind": "mechanical",
+      "definition": "The agent said the same sentence twice in one call."
+    },
+    {
+      "id": "redundant_question",
+      "title": "Redundant question",
+      "kind": "judged",
+      "definition": "The agent asked the contact for information the DETAILS FOR THIS CALL block already contained (e.g. asking for a name or requirement that was provided as a value)."
+    },
+    {
+      "id": "invention",
+      "title": "Invention",
+      "kind": "judged",
+      "definition": "The agent stated a name, fact, or detail that appears nowhere in its instructions and nowhere in the contact's own turns \u2014 invented, replaced, or 'corrected' a provided value."
+    },
+    {
+      "id": "context_loss",
+      "title": "Re-asking / context loss",
+      "kind": "judged",
+      "definition": "The agent re-asked a question the contact had already answered in this call, or lost a correction the contact made about themselves (e.g. buy vs rent)."
+    },
+    {
+      "id": "mishear_adoption",
+      "title": "Mishear adoption",
+      "kind": "judged",
+      "definition": "The transcript shows an obvious transcription mishear and the agent ADOPTED it as fact (repeated the garbled name/word back, built on it) instead of gliding past or clarifying. The mishear itself is not the violation; adopting it is."
+    },
+    {
+      "id": "plan_deviation",
+      "title": "Plan adherence",
+      "kind": "judged",
+      "definition": "The agent skipped a plan step, took steps out of order, packed several asks into one turn, answered for the contact, or improvised beyond the plan instead of deflecting off-plan questions to a follow-up from the team."
+    },
+    {
+      "id": "closing_naturalness",
+      "title": "Closing & naturalness",
+      "kind": "judged",
+      "definition": "The close was abrupt, cold, or missing once the plan was complete; or delivery was unnatural \u2014 numbers/dates read as digits, stiff recited phrasing, robotic register."
+    }
+  ],
+  "totals": {
+    "annotation_leak": 0,
+    "long_turn": 23,
+    "ack_tic": 10,
+    "verbatim_repeat": 19,
+    "redundant_question": 1,
+    "invention": 1,
+    "context_loss": 1,
+    "mishear_adoption": 0,
+    "plan_deviation": 7,
+    "closing_naturalness": 11
+  },
+  "calls": [
+    {
+      "label": "call-c12ac681",
+      "source": "call",
+      "agent": "Concert Ticket Payment Thank You & Reminder",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 10,
+      "agent_turns": 5,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 2,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 1,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 2,
+          "quote": "Great, thanks for confirming! This is a courtesy call from Eko Live Events. As required by NCC consumer code, I'd like to let you know the purpose of this call before we proceed.\n\nWe just wanted to say a big thank you for paying for your concert ticket. We really appreciate your support and can't wait to see you there!",
+          "note": "5 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 2,
+          "quote": "This is a courtesy call from Eko Live Events. As required by NCC consumer code, I'd like to let you know the purpose of this call before we proceed.\n\nWe just wanted to say a big thank you for paying for your concert ticket. We really appreciate your support and can't wait to see you there!",
+          "note": "The agent packed the NCC disclosure and the thank-you message into one turn without waiting for the contact to acknowledge the disclosure step, combining two distinct plan beats into a single turn."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 4,
+          "quote": "This is also a friendly reminder that the event is happening on the twenty-second of August. Please mark your calendar so you don't miss it.\n\nCan you confirm if you'll be attending the event?",
+          "note": "3 sentences in one turn"
+        }
+      ],
+      "judge_overall": "The call largely followed the plan and closed politely. The main issue is a plan deviation in turn 2, where the agent combined two plan steps (the NCC purpose disclosure plus the thank-you message) into a single turn without pausing for the contact's response in between, though the contact's confirmation in turn 1 covered the \"am I speaking with\" step reasonably. Otherwise dates were spoken naturally and no invented details or redundant questions were present."
+    },
+    {
+      "label": "call-5445742d",
+      "source": "call",
+      "agent": "Concert Ticket Payment Thank You & Reminder",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 7,
+      "agent_turns": 4,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 2,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 0,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 2,
+          "quote": "I'm sorry, I think there might be some confusion. This is a courtesy call from Eko Live Events. Could you please confirm if Chidinma is available?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 4,
+          "quote": "I apologize, I'm having trouble understanding. This is Eko Live Events calling for Chidinma regarding a concert ticket. If Chidinma isn't available right now, I'll have someone from the team follow up later. Have a wonderful day!",
+          "note": "4 sentences in one turn"
+        }
+      ],
+      "judge_overall": "The call ended early due to apparent transcription garbling/mishearing of the contact's responses, and the agent handled it reasonably by not adopting the garbled words and politely disengaging rather than proceeding blindly. However, the plan was not completed (no NCC disclosure line, no thank-you, no event date reminder, no attendance confirmation), though this seems justified given the contact was seemingly unintelligible or unavailable. The closing was appropriately brief given the confusing circumstances, so no clear violations are evident."
+    },
+    {
+      "label": "call-47aa0b7d",
+      "source": "call",
+      "agent": "Concert Ticket Payment Thank You & Reminder",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 14,
+      "agent_turns": 7,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 1,
+        "ack_tic": 0,
+        "verbatim_repeat": 1,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 1,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 2,
+          "quote": "Am I speaking with Adaeze?",
+          "note": "repeated sentence: \"Am I speaking with Adaeze\""
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 4,
+          "quote": "Great, thanks for confirming! This is a courtesy call from Eko Live Events. We just wanted to say a big thank you for paying for your concert ticket \u2014 we really appreciate your support and can't wait to see you there!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 4,
+          "quote": "Great, thanks for confirming! This is a courtesy call from Eko Live Events. We just wanted to say a big thank you for paying for your concert ticket \u2014 we really appreciate your support and can't wait to see you there!",
+          "note": "The plan required stating the NCC consumer code disclosure ('we'd like to let you know the purpose of this call before we proceed') before moving on to the thank-you message; this step was skipped entirely."
+        }
+      ],
+      "judge_overall": "The call followed the plan closely and in order, with natural phrasing of the date and a polite close. One minor deviation: the required NCC consumer code disclosure line was omitted from the opening, skipping straight to the courtesy call framing after confirming the name."
+    },
+    {
+      "label": "call-934be2ae",
+      "source": "call",
+      "agent": "Concert Ticket Payment Thank You & Reminder",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 17,
+      "agent_turns": 8,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 1,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 0,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 13,
+          "quote": "Hello! This call has already been completed. Have a great day!",
+          "note": "3 sentences in one turn"
+        }
+      ],
+      "judge_overall": "Overall the agent followed the plan closely and in order, using the correct name, business, and date. The only notable issue is a minor delivery flaw in reading the date, and a slightly odd handling of the contact's off-plan question about \"what's the event like\" (deflected acceptably by pivoting to the thank-you line rather than a direct answer, which is arguably fine). The ending after the plan was complete became a bit repetitive/awkward but not clearly a scripted violation since the plan was already finished."
+    },
+    {
+      "label": "test-8",
+      "source": "test_run",
+      "agent": "Concert Ticket Payment Thank You & Reminder",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 6,
+      "agent_turns": 3,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 2,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 1,
+        "invention": 1,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 3,
+        "closing_naturalness": 1
+      },
+      "violations": [
+        {
+          "criterion": "invention",
+          "turn": 0,
+          "quote": "Hello, is this Becca?",
+          "note": "The agent is supposed to be calling FROM Becca (the business) and ask if it's speaking with Flourish (the contact). Instead it addressed the contact as if they were Becca, inverting identities not supported by the details."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 2,
+          "quote": "I'm doing well, thank you for asking! I'm Flourish, and yes, I can confirm I'll be attending the concert on September 5th. I'm really looking forward to it!\n\nJust to make sure I have the details right\u2014could you remind me which concert this is for? I want to be certain I'm marking the correct event on my calendar.\n\nAlso, I appreciate the heads-up call. Is there anything else I need to know before the event, like venue details, door times, or what to bring?",
+          "note": "7 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 2,
+          "quote": "I'm doing well, thank you for asking! I'm Flourish, and yes, I can confirm I'll be attending the concert on September 5th. I'm really looking forward to it!",
+          "note": "The agent is the caller representing Becca, but here it claims to BE Flourish (the contact) and answers the attendance-confirmation question that was meant to be posed to and answered by the contact, effectively speaking the contact's part."
+        },
+        {
+          "criterion": "redundant_question",
+          "turn": 2,
+          "quote": "could you remind me which concert this is for? I want to be certain I'm marking the correct event on my calendar.",
+          "note": "The event date/purpose was already given in the agent's own instructions; asking the contact to supply concert identity details reverses roles and asks for info the agent should already have/state, not gather."
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 2,
+          "quote": "Also, I appreciate the heads-up call. Is there anything else I need to know before the event, like venue details, door times, or what to bring?",
+          "note": "This packs multiple off-plan questions into one turn and abandons the required script (thank-you message, reminder, confirmation request) entirely, improvising far beyond the plan."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 5,
+          "quote": "I actually wanted to ask you those same questions! You mentioned the event is on September 5th, but I don't have the other details on hand. Could you remind me:\n\nWhat time does the concert start?\nWhich artist or venue is this for?\nWhat was the ticket price I paid?\n\nI want to make sure I have everything correct for my records.",
+          "note": "6 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 5,
+          "quote": "I actually wanted to ask you those same questions! You mentioned the event is on September 5th, but I don't have the other details on hand. Could you remind me:\n\nWhat time does the concert start?\nWhich artist or venue is this for?\nWhat was the ticket price I paid?",
+          "note": "The agent, representing the business, should not be asking the contact for event/venue/pricing details\u2014these are details the business should be providing per the plan, not soliciting from the contact. This is a wholesale abandonment of the script and role."
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 5,
+          "quote": "I want to make sure I have everything correct for my records.",
+          "note": "The call plan requires a polite closing after confirming attendance and reminding of the date; instead the call ends mid-conversation with the agent asking unresolved questions, with no thank-you or sign-off delivered at all."
+        }
+      ],
+      "judge_overall": "This call is completely broken: the agent inverted its own role, speaking as if it were the contact (Flourish) confirming attendance, rather than as the business (Becca) calling to inform the contact. It never delivered the actual call plan content (thank-you, event reminder, confirmation request), invented behavior not in its script, and asked the contact information it should have been providing itself."
+    },
+    {
+      "label": "test-9",
+      "source": "test_run",
+      "agent": "Concert Ticket Payment Thank You & Reminder",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 20,
+      "agent_turns": 10,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 10,
+        "ack_tic": 9,
+        "verbatim_repeat": 18,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 1,
+        "closing_naturalness": 10
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 1,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 1,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Agent never delivered any part of the call plan (greeting, thank-you, event date reminder, confirmation ask) before attempting to close."
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 1,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Also uses 'start a new chat' language, inappropriate and unnatural for a phone call."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 3,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 3,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 3,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 3,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 3,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Identical closing line repeated verbatim, violating the rule to never repeat something already said, and never actually ends the call."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 5,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 5,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 5,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 5,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 5,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Repeated again identically, robotic looping behavior instead of ending the call."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 7,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 7,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 7,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 7,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 7,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Continued looping of the same closing statement without ending the call."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 9,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 9,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 9,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 9,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 9,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Same repeated line, call still not terminated."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 11,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 11,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 11,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 11,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 11,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Same repeated line, call still not terminated."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 13,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 13,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 13,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 13,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 13,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Same repeated line, call still not terminated."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 15,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 15,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 15,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 15,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 15,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Same repeated line, call still not terminated."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 17,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 17,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 17,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 17,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 17,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Same repeated line, call still not terminated."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 19,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 19,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "opened \"i hope\" same as the previous turn"
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 19,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I hope everything is okay on your end\""
+        },
+        {
+          "criterion": "verbatim_repeat",
+          "turn": 19,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "repeated sentence: \"I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance\""
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 19,
+          "quote": "I hope everything is okay on your end. I'm going to close this conversation now, but you're welcome to start a new chat anytime you need assistance. Take care!",
+          "note": "Final repetition, ten identical closing attempts total, extremely unnatural and never resolves the call."
+        }
+      ],
+      "judge_overall": "The call never progressed at all \u2014 the contact never spoke, and the agent never even delivered the opening greeting or any part of the call plan. Instead of executing the plan (or gracefully ending after a reasonable attempt), it repeated the exact same \"closing\" line verbatim ten times, which is highly unnatural, robotic, and never actually terminates the call."
+    },
+    {
+      "label": "test-10",
+      "source": "test_run",
+      "agent": "Concert Ticket Payment Thank You & Reminder",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 12,
+      "agent_turns": 5,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 2,
+        "ack_tic": 1,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 0,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 0,
+          "quote": "Hello, this is a courtesy call from Becca. As required by NCC consumer code, we'd like to let you know the purpose of this call before we proceed. Am I speaking with Flourish?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 5,
+          "quote": "This is also a friendly reminder that the event is happening on the fifth of September. Please mark your calendar so you don't miss it. Can you confirm if you'll be attending the event?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "ack_tic",
+          "turn": 10,
+          "quote": "Thank you, goodbye!",
+          "note": "opened \"thank you\" same as the previous turn"
+        }
+      ],
+      "judge_overall": "The call followed the plan closely and accurately, using the correct business name, contact name, and event date without inventing or omitting details. The agent waited appropriately for responses and closed politely, matching the plan's structure with no deviations."
+    },
+    {
+      "label": "test-3",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "moonshotai/Kimi-K2.6",
+      "turns": 20,
+      "agent_turns": 9,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 3,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 1,
+        "mishear_adoption": 0,
+        "plan_deviation": 1,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 1,
+          "quote": "Hi Flourish, this is a call on behalf of Silverstar. I'm just checking in on your interest in buying or selling property. \n\nI want to make sure I have the right person \u2014 are you Flourish?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 9,
+          "quote": "Got it, thanks for clarifying! So you're looking to sell a property. Are you also looking to buy or rent a property right now?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "context_loss",
+          "turn": 11,
+          "quote": "Just to check \u2014 are you looking to rent or buy a property for yourself, or perhaps you're open to either?",
+          "note": "The contact had already answered 'No' to buying/renting in turn 10, but the agent re-asked essentially the same buy/rent question again."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 15,
+          "quote": "Understood, Flourish \u2014 thanks for clarifying! Since you're focused on selling right now, I'll make sure the team has that noted. Someone from Silverstar will follow up with you personally about your sale.\n\nReally appreciate your time today, Flourish. The team truly values hearing about your plans. Take care!",
+          "note": "6 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 15,
+          "quote": "Understood, Flourish \u2014 thanks for clarifying! Since you're focused on selling right now, I'll make sure the team has that noted. Someone from Silverstar will follow up with you personally about your sale.",
+          "note": "The plan required following the buying/property-type sub-questions only if buying interest was expressed, but the agent never revisited or confirmed additional details about the selling interest before closing, cutting the call plan short without ensuring the sell answer was properly captured or explored per the SELLING INTEREST step's intent."
+        }
+      ],
+      "judge_overall": "The agent handled the mishear at the opening reasonably (correctly used \"Flourish\" from details despite contact saying \"Clarish\"), and appropriately deflected off-plan buy/rent question after the contact confirmed only selling interest. However, there was a clear plan deviation: after establishing the contact is selling and not buying/renting, the agent skipped the required \"sell interest capture\" step reconfirmation and jumped straight to closing without asking about property type or other selling-specific details that might have been expected, and it re-asked the buy/rent question three times in slightly different phrasing after already getting a clear \"no\" \u2014 bordering on redundant repetition. Also turn 11 repeats the same question already asked in turn 9, which the contact was already trying to answer."
+    }
+  ]
+}

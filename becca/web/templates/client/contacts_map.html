@@ -1,0 +1,175 @@
+{# Import & map, health-first layout (14 Aug 2026 redesign — verdict on
+   branch prototype/contacts-map: variant C). The status strip answers
+   "is this list okay?" before the mechanics; blockers come before the
+   mapping they are fixed in; the fine detail sits last. #}
+{% extends "base.html" %}
+{% block title %}{{ list.filename }} — Contacts — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'contacts' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Contacts / Import{% endblock %}
+{% block heading %}{{ list.filename }}{% endblock %}
+{% block steps %}{% with steps_current = 5 %}{% include 'client/_steps.html' %}{% endwith %}{% endblock %}
+{% block actions %}
+<span class="meta-sm">{{ list.row_count }} ROWS · {{ headers | length }} COLUMNS</span>
+<details style="position:relative">
+  <summary class="btn btn-ghost btn-sm" style="list-style:none; cursor:pointer">Replace file</summary>
+  <form method="post" action="/contacts/{{ list.id }}/file" enctype="multipart/form-data"
+        class="panel" style="position:absolute; right:0; z-index:5; padding:var(--np-space-4); display:grid; gap:var(--np-space-3); min-width:260px">
+    <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+    <input type="file" name="file" accept=".csv,.xlsx" required
+           style="font-size:0.8125rem; color:var(--bc-text-2)">
+    <button class="btn btn-secondary btn-sm" type="submit">Upload replacement</button>
+    <span class="meta-sm">COLUMNS YOU ALREADY PLACED KEEP THEIR MAPPING</span>
+  </form>
+</details>
+{% endblock %}
+{% block content %}
+
+{% set blockers = (unmapped | length) + (0 if phone_col else 1) %}
+
+<div style="display:grid; gap:1rem">
+
+{% if error == 'default' %}
+<div class="callout warn">
+  <strong>The default needs words.</strong> It is what the agent says when a row has no
+  value — "a consultant" reads naturally; an empty string does not.
+</div>
+{% endif %}
+{% if error == 'unreadable' %}
+<div class="callout warn">
+  <strong>That replacement could not be read.</strong> The previous file is untouched.
+</div>
+{% endif %}
+
+{# ---- the verdict strip: is this list okay? ---- #}
+<div class="note-bar">
+  {% if blockers %}
+  <span class="pill" data-s="fail"><span aria-hidden="true">✕</span> {{ blockers }} required unmapped</span>
+  {% else %}
+  <span class="pill" data-s="ok"><span aria-hidden="true">✓</span> All required mapped</span>
+  {% endif %}
+  <span style="font-size:0.875rem; color:var(--bc-text-2)">
+    <span class="num">{{ list.diallable_count }}</span> of <span class="num">{{ list.row_count }}</span> rows diallable
+    {% if excluded %}· {{ excluded }} excluded, kept with reasons{% endif %}</span>
+  <span class="track" style="width:140px"><span class="fill{{ ' warn' if list.row_count and (list.diallable_count / list.row_count) < 0.5 }}" style="width:{{ (100 * list.diallable_count / list.row_count) | round(1) if list.row_count else 0 }}%"></span></span>
+  <span class="meta-sm" style="margin-left:auto">AGAINST {{ agent.name | upper }} v{{ agent.version_n }}</span>
+</div>
+
+{% if excluded > 0 %}
+<div class="callout warn">
+  <strong>{{ excluded }} row{{ '' if excluded == 1 else 's' }} will not be dialled.</strong>
+  {% if health.unparseable_number %}{{ health.unparseable_number }} number{{ '' if health.unparseable_number == 1 else 's' }} cannot be read as valid phone numbers{% endif %}{% if health.missing_required_value %}{{ ', ' if health.unparseable_number }}{{ health.missing_required_value }} row{{ ' is' if health.missing_required_value == 1 else 's are' }} missing a required value{% endif %}{% if duplicates %}{{ ', and ' if health.unparseable_number or health.missing_required_value }}{{ duplicates }} {{ 'is a row' if duplicates == 1 else 'are rows' }} repeated exactly{% endif %}.
+  They stay in the list and are excluded from the launch count.
+</div>
+{% endif %}
+
+{% if not phone_col %}
+<div class="callout warn">
+  <strong>No phone column.</strong> Nothing can be dialled until one column is mapped
+  to the phone number.
+</div>
+{% endif %}
+
+{# ---- blockers, fixable in place, before the mapping they point at ---- #}
+{% for f in unmapped %}
+<div class="panel" style="border-color:var(--bc-magenta-ink)">
+  <div class="panel-body" style="display:grid; gap:var(--np-space-3)">
+    <span style="font-size:0.875rem; color:var(--bc-text-1)">
+      <span class="tag miss">{{ f.key }}</span> is required and no column supplies it.
+      The guide says it out loud on every call.</span>
+    <span class="meta-sm">PICK A COLUMN IN THE MAPPING BELOW — OR MAKE IT OPTIONAL WITH A SPOKEN FALLBACK</span>
+    <form method="post" action="/contacts/{{ list.id }}/make-optional"
+          class="row" style="gap:var(--np-space-2)">
+      <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+      <input type="hidden" name="field_id" value="{{ f.id }}">
+      <input class="input" type="text" name="default" required
+             placeholder='What to say instead, e.g. "a consultant"'
+             style="flex:1; font-size:0.8125rem">
+      <button class="btn btn-secondary btn-sm" type="submit">Make optional</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{# ---- the mapping ---- #}
+<div class="panel">
+  <div class="panel-head">
+    <h3 class="h4" style="margin:0">Map your columns</h3>
+    <span class="meta-sm">UNMAPPED COLUMNS STAY IN THE FILE</span>
+  </div>
+  <form method="post" action="/contacts/{{ list.id }}/mapping">
+    <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+    <div class="panel-body" style="padding-top:var(--np-space-2)">
+      {% for h in headers %}
+      {% set target = mapping[h] %}
+      <div class="map-row">
+        <span class="cell-mono">{{ h }}</span>
+        <span class="map-arrow" aria-hidden="true">→</span>
+        <select name="col_{{ loop.index0 }}" class="input"
+                style="font-size:0.8125rem; padding:0.35rem 0.5rem">
+          <option value="">Not used — kept in the file</option>
+          <option value="phone" {% if target == 'phone' %}selected{% endif %}>phone number</option>
+          {% for f in contract %}
+          <option value="{{ f.id }}" {% if target == f.id %}selected{% endif %}>
+            {{ f.key }}{{ ' (required)' if f.required else ' (optional)' }}</option>
+          {% endfor %}
+        </select>
+        {% if target == 'phone' or (target is number and (contract | selectattr('id', 'equalto', target) | selectattr('required') | list)) %}
+        <span class="meta-sm">REQUIRED</span>
+        {% elif target is number %}
+        <span class="meta-sm">OPTIONAL</span>
+        {% else %}
+        <span class="meta-sm">—</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="panel-foot">
+      <span class="meta-sm">{{ mapped_count }} OF {{ headers | length }} MAPPED</span>
+      <button class="btn btn-primary btn-sm" type="submit">Save mapping &amp; re-check</button>
+    </div>
+  </form>
+</div>
+
+{# ---- the fine detail ---- #}
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">The details</h3></div>
+  <div class="panel-body stack" style="display:grid; gap:var(--np-space-4)">
+    <ul class="check">
+      <li data-s="ok"><span class="g" aria-hidden="true">✓</span>
+        <span>{{ health.ok + health.missing_required_value }} number{{'' if health.ok + health.missing_required_value == 1 else 's'}} normalised to E.164</span></li>
+      {% if health.unparseable_number %}
+      <li data-s="warn"><span class="g" aria-hidden="true">✕</span>
+        <span>{{ health.unparseable_number }} number{{ '' if health.unparseable_number == 1 else 's' }} could not be parsed — review them below</span></li>
+      {% endif %}
+      {% if health.missing_required_value %}
+      <li data-s="warn"><span class="g" aria-hidden="true">✕</span>
+        <span>{{ health.missing_required_value }} row{{ ' is' if health.missing_required_value == 1 else 's are' }} missing a required value and will not be dialled</span></li>
+      {% endif %}
+      {% if duplicates %}
+      <li data-s="ok"><span class="g" aria-hidden="true">✓</span>
+        <span>{{ duplicates }} identical row{{ '' if duplicates == 1 else 's' }} kept once — a different call to the same number is kept in full</span></li>
+      {% endif %}
+    </ul>
+    {% if unparseable_rows %}
+    <div class="divider"></div>
+    <div>
+      <p class="meta-sm" style="margin:0 0 var(--np-space-2)">COULD NOT BE READ AS PHONE NUMBERS</p>
+      {% for r in unparseable_rows %}
+      <div class="map-row" style="grid-template-columns:70px minmax(0,1fr); padding:var(--np-space-2) 0">
+        <span class="meta-sm">ROW {{ r[0] }}</span>
+        <span class="cell-mono">{{ r[1] or '(empty)' }}</span>
+      </div>
+      {% endfor %}
+      {% if health.unparseable_number > 5 %}
+      <p class="meta-sm" style="margin:var(--np-space-2) 0 0">AND {{ health.unparseable_number - 5 }} MORE</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+</div>
+{% endblock %}

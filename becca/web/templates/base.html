@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Becca{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/becca.css">
+</head>
+<body>
+<div class="app">
+  <aside class="app-nav">
+    <p class="brand"><span class="dot" aria-hidden="true"></span> Becca</p>
+    {% block nav %}{% endblock %}
+    <div class="tenant">
+      <span class="av" aria-hidden="true">{% block tenant_initials %}B{% endblock %}</span>
+      <span class="stack-sm" style="gap:0">
+        <span class="h5">{% block tenant_name %}Becca{% endblock %}</span>
+        <span class="meta-sm">{% block tenant_kind %}{% endblock %}</span>
+      </span>
+    </div>
+    <a class="meta-sm" href="/auth/logout"
+       style="display:block; padding:0.5rem 0.75rem; color:var(--bc-text-3)">
+      Signed in as {% if ctx is defined %}{{ ctx.email }}{% elif staff is defined %}{{ staff.email }}{% endif %} · Sign out
+    </a>
+  </aside>
+  <div class="app-main">
+    <div class="app-top">
+      <div>
+        <p class="crumb">{% block crumb %}{% endblock %}</p>
+        <h2>{% block heading %}{% endblock %}</h2>
+      </div>
+      <div class="stack-sm" style="display:grid; gap:0.5rem; justify-items:end">
+        {% block steps %}{% endblock %}
+        <div class="row">{% block actions %}{% endblock %}</div>
+      </div>
+    </div>
+    <div class="app-body">
+      {% if ctx is defined and ctx.entered %}
+      <div class="note-bar" style="border-color:var(--bc-accent-ink); background:var(--np-accent-wash)">
+        <span class="pill" data-s="live"><span aria-hidden="true">✦</span> Becca</span>
+        <span style="font-size:0.875rem; color:var(--bc-text-1)">
+          You are inside <b>{{ ctx.account_name }}</b> as <b>{{ ctx.email }}</b>.
+          Everything you do here is on their account and shows in their history.
+        </span>
+        <form method="post" action="/leave" style="margin-left:auto">
+          <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+          <button class="btn btn-ghost btn-sm" type="submit">Leave client account</button>
+        </form>
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+<script>
+  // Unread badge (FR-NOTIFY-1): filled after paint so no page render
+  // waits on the count; absent (signed out / plane without the link)
+  // it does nothing.
+  (function () {
+    var badge = document.getElementById("notif-badge");
+    if (!badge) return;
+    fetch("/notifications/unread").then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (d && d.count > 0) { badge.textContent = d.count > 99 ? "99+" : d.count; badge.style.display = "inline-flex"; }
+      }).catch(function () {});
+  })();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

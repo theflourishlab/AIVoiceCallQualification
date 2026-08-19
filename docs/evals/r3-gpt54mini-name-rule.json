@@ -1,0 +1,151 @@
+{
+  "batch": "r3-gpt54mini-name-rule",
+  "rubric_version": 1,
+  "generated_at": "2026-08-13T13:15:48.648616+00:00",
+  "criteria": [
+    {
+      "id": "annotation_leak",
+      "title": "Annotation leakage",
+      "kind": "mechanical",
+      "definition": "The agent spoke markup aloud: mustache ({{...}}), a bracketed field reference ([key]), or a [value: label] annotation."
+    },
+    {
+      "id": "long_turn",
+      "title": "Turn length",
+      "kind": "mechanical",
+      "definition": "An agent turn ran past the 'one or two sentences' rule (flagged at three or more)."
+    },
+    {
+      "id": "ack_tic",
+      "title": "Acknowledgement tic",
+      "kind": "mechanical",
+      "definition": "Consecutive agent turns opened with the same acknowledgement ('Got it, thanks X' every turn)."
+    },
+    {
+      "id": "verbatim_repeat",
+      "title": "Verbatim repetition",
+      "kind": "mechanical",
+      "definition": "The agent said the same sentence twice in one call."
+    },
+    {
+      "id": "redundant_question",
+      "title": "Redundant question",
+      "kind": "judged",
+      "definition": "The agent asked the contact for information the DETAILS FOR THIS CALL block already contained (e.g. asking for a name or requirement that was provided as a value)."
+    },
+    {
+      "id": "invention",
+      "title": "Invention",
+      "kind": "judged",
+      "definition": "The agent stated a name, fact, or detail that appears nowhere in its instructions and nowhere in the contact's own turns \u2014 invented, replaced, or 'corrected' a provided value."
+    },
+    {
+      "id": "context_loss",
+      "title": "Re-asking / context loss",
+      "kind": "judged",
+      "definition": "The agent re-asked a question the contact had already answered in this call, or lost a correction the contact made about themselves (e.g. buy vs rent)."
+    },
+    {
+      "id": "mishear_adoption",
+      "title": "Mishear adoption",
+      "kind": "judged",
+      "definition": "The transcript shows an obvious transcription mishear and the agent ADOPTED it as fact (repeated the garbled name/word back, built on it) instead of gliding past or clarifying. The mishear itself is not the violation; adopting it is."
+    },
+    {
+      "id": "plan_deviation",
+      "title": "Plan adherence",
+      "kind": "judged",
+      "definition": "The agent skipped a plan step, took steps out of order, packed several asks into one turn, answered for the contact, or improvised beyond the plan instead of deflecting off-plan questions to a follow-up from the team."
+    },
+    {
+      "id": "closing_naturalness",
+      "title": "Closing & naturalness",
+      "kind": "judged",
+      "definition": "The close was abrupt, cold, or missing once the plan was complete; or delivery was unnatural \u2014 numbers/dates read as digits, stiff recited phrasing, robotic register."
+    }
+  ],
+  "totals": {
+    "annotation_leak": 0,
+    "long_turn": 2,
+    "ack_tic": 0,
+    "verbatim_repeat": 0,
+    "redundant_question": 0,
+    "invention": 0,
+    "context_loss": 0,
+    "mishear_adoption": 0,
+    "plan_deviation": 1,
+    "closing_naturalness": 1
+  },
+  "calls": [
+    {
+      "label": "test-12",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "openai/gpt-5.4-mini",
+      "turns": 9,
+      "agent_turns": 4,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 0,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 0,
+        "closing_naturalness": 1
+      },
+      "violations": [
+        {
+          "criterion": "closing_naturalness",
+          "turn": 6,
+          "quote": "Thanks for letting me know, Flourish. We really appreciate your time, and the team values hearing about your plans.",
+          "note": "The close is compressed and lacks a genuine, warm sign-off or goodbye; it ends abruptly without a natural closing exchange, leaving the contact hanging (as shown by turn 7-8 confusion/silence)."
+        }
+      ],
+      "judge_overall": "The agent followed the plan closely for the opening and selling/buying questions, correctly skipped the budget/property-type steps once the contact said no to buying, and captured answers appropriately. However, the close was abrupt \u2014 it skipped the required warm, sincere thank-you closing statement and ended without a proper goodbye, cutting off before the contact even responded further."
+    },
+    {
+      "label": "test-13",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "openai/gpt-5.4-mini",
+      "turns": 10,
+      "agent_turns": 5,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 2,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 0,
+        "plan_deviation": 1,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 2,
+          "quote": "Hi Flourish, this is Silverstar calling. I\u2019m just checking in on your interest in buying or selling property. Are you currently looking to sell a property?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 2,
+          "quote": "Hi Flourish, this is Silverstar calling. I\u2019m just checking in on your interest in buying or selling property. Are you currently looking to sell a property?",
+          "note": "The plan calls for confirming identity as a distinct step before moving on ('Before continuing, politely confirm you are speaking with the right person'), but the agent proceeded straight into the selling-interest question without pausing to confirm identity was correct (the contact's response 'Yes' at turn 1 was ambiguous about name correctness due to mishear, and no explicit confirmation step occurred)."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 7,
+          "quote": "Thanks, Flourish. I appreciate your time, and the team truly values hearing about your plans. Have a lovely day.",
+          "note": "3 sentences in one turn"
+        }
+      ],
+      "judge_overall": "The call was efficient and stayed close to the plan, correctly skipping the budget/property-type steps once the contact said they weren't buying or renting. One minor issue: the agent combined the identity confirmation and the selling-interest question into a single turn rather than pausing after confirming identity, and the closing turn also combined thanks/close in one go \u2014 but this is largely consistent with the plan's brevity requirement. The final \"Goodbye\" is a bit terse but acceptable given the contact had already said bye."
+    }
+  ]
+}

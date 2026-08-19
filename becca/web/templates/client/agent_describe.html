@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Describe — {{ agent.name }} — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'agents' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block steps %}{% with steps_current = 1, agent = agent %}{% include 'client/_steps.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Agents / {{ agent.name }}{% endblock %}
+{% block heading %}Describe the call{% endblock %}
+{% block content %}
+<div class="gate" style="display:grid; gap:var(--np-space-5); max-width:760px">
+
+  {% if error == 'generation' %}
+  <div class="callout warn">
+    <strong>Becca could not rebuild from that description.</strong> Try describing
+    the call differently and rebuild again.
+  </div>
+  {% endif %}
+
+  {% if frozen %}
+  <div class="callout">
+    <strong>This agent has run.</strong> Its description is kept for the record but
+    can no longer rebuild it — duplicate the agent to start from a new description.
+  </div>
+  <div class="panel"><div class="panel-body">
+    <p style="margin:0; white-space:pre-wrap; color:var(--bc-text-2)">{{ agent.brief or 'No description was stored for this agent.' }}</p>
+  </div></div>
+  <div><a class="btn btn-ghost btn-sm" href="/agents/{{ agent.id }}">Back to review</a></div>
+  {% else %}
+  <form method="post" action="/agents/{{ agent.id }}/describe" class="stack" style="display:grid; gap:var(--np-space-4)">
+    <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="h4" style="margin:0">The call, in your own words</h3>
+        <span class="meta-sm">EDITABLE UNTIL LAUNCH</span>
+      </div>
+      <div class="panel-body">
+        <textarea class="textarea" id="brief" name="brief" required style="min-height:180px"
+          placeholder="Who is being called, why, what to ask, what to capture.">{{ agent.brief }}</textarea>
+        <div class="dictate" data-dictate="#brief"></div>
+        <p class="hint" style="margin-top:0.75rem">
+          {% if not agent.brief %}This agent was created before descriptions were
+          stored, so this box starts empty — write the call as you would today.
+          {% else %}Edit freely; nothing changes until you rebuild.{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="callout warn">
+      <strong>Rebuilding replaces the guide and its fields</strong> with a fresh
+      build from this description (saved as v{{ agent.version_n + 1 }}).
+      Your agent's name and past test calls stay, but test-to-test comparisons
+      reset where fields changed. For small changes, edit the guide on the
+      review screen instead.
+    </div>
+    <div class="row between" style="display:flex; justify-content:space-between">
+      <a class="btn btn-ghost btn-sm" href="/agents/{{ agent.id }}">Back to review</a>
+      <button class="btn btn-primary btn-sm" type="submit">Rebuild from description</button>
+    </div>
+  </form>
+  {% endif %}
+
+</div>
+<script src="/static/dictate.js"></script>
+{% endblock %}

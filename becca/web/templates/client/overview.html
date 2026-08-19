@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Overview — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'overview' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Client account{% endblock %}
+{% block heading %}Overview{% endblock %}
+{% block content %}
+{% if refreshing %}<meta http-equiv="refresh" content="4">{% endif %}
+
+{% macro status_pill(a) %}
+  {% if a.status == 'dialling' and a.paused %}<span class="pill" data-s="warn"><span aria-hidden="true">❚❚</span> Paused</span>
+  {% elif a.status == 'dialling' %}<span class="pill" data-s="live"><span class="pulse sm" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span> Dialling</span>
+  {% elif a.status == 'scheduled' %}<span class="pill" data-s="idle"><span aria-hidden="true">◷</span> Scheduled</span>
+  {% elif a.status == 'finished' %}<span class="pill" data-s="ok"><span aria-hidden="true">✓</span> Complete</span>
+  {% else %}<span class="pill" data-s="fail"><span aria-hidden="true">✕</span> Halted</span>{% endif %}
+{% endmacro %}
+
+{# ---- live capacity bar (variant A) ---- #}
+<div class="note-bar" style="margin-bottom:1rem">
+  {% if live.dialling_agents %}
+  <span class="pill" data-s="live"><span class="pulse sm" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span> Live</span>
+  <span style="font-size:0.875rem; color:var(--bc-text-2)">
+    {{ live.dialling_agents }} agent{{ 's' if live.dialling_agents != 1 }} dialling ·
+    <span class="num">{{ live.in_flight }}</span> of <span class="num">{{ live.allocation }}</span> channels in use</span>
+  {% else %}
+  <span class="pill" data-s="idle">Quiet</span>
+  <span style="font-size:0.875rem; color:var(--bc-text-2)">Nothing is dialling right now.</span>
+  {% endif %}
+  {% if live.allocation %}
+  <span class="track" style="width:120px"><span class="fill" style="width:{{ (live.in_flight / live.allocation * 100) | round | int }}%"></span></span>
+  <span class="meta-sm" style="margin-left:auto">YOUR CAPACITY · {{ live.allocation }} CALL{{ 'S' if live.allocation != 1 }} AT ONCE</span>
+  {% endif %}
+</div>
+
+{# ---- today KPIs (variant A) ---- #}
+<div class="grid4" style="margin-bottom:1rem">
+  <div class="kpi"><span class="l">Calls today</span><span class="v">{{ kpi.calls }}</span>
+    <span class="d">across all agents</span></div>
+  <div class="kpi"><span class="l">Reached</span>
+    <span class="v">{% if kpi.calls %}{{ (kpi.reached / kpi.calls * 100) | round | int }}%{% else %}—{% endif %}</span>
+    <span class="d">{{ kpi.reached }} of {{ kpi.calls }} connected</span></div>
+  <div class="kpi"><span class="l">Results captured</span><span class="v">{{ kpi.results }}</span>
+    <span class="d">calls with answers</span></div>
+  <div class="kpi"><span class="l">Spend today</span><span class="v num">${{ '%.2f' | format(kpi.spend) }}</span>
+    <span class="d">{{ kpi.billed_minutes }} billed min · ${{ '%.2f' | format(rate) }}/min</span></div>
+</div>
+
+{# ---- charts (variant A) ---- #}
+<div class="split" style="margin-bottom:1rem">
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Calls by hour</h3>
+      <span class="meta-sm">TODAY · LAGOS</span></div>
+    <div class="panel-body">
+      {% if max_hour %}
+      <div class="bars" aria-hidden="true">
+        {% for n in hours %}<span class="b" style="height:{{ (n / max_hour * 100) | round | int }}%"></span>{% endfor %}
+      </div>
+      <div class="axis"><span class="meta-sm">00:00</span><span class="meta-sm">12:00</span><span class="meta-sm">23:00</span></div>
+      {% else %}
+      <p class="meta" style="margin:0">No calls yet today.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Call outcomes</h3>
+      <span class="meta-sm">TODAY · {{ outcome_total }} CALL{{ 'S' if outcome_total != 1 }}</span></div>
+    <div class="panel-body">
+      {% if outcome_total %}
+      <div class="stackbar" aria-hidden="true">
+        <i style="width:{{ (outcome.reached / outcome_total * 100) | round | int }}%; background:var(--np-viz-1)"></i>
+        <i style="width:{{ (outcome.failed / outcome_total * 100) | round | int }}%; background:var(--np-viz-3)"></i>
+        <i style="width:{{ (outcome.dialling / outcome_total * 100) | round | int }}%; background:var(--np-viz-4)"></i>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--np-viz-1)"></i> Reached {{ (outcome.reached / outcome_total * 100) | round | int }}%</span>
+        <span><i style="background:var(--np-viz-3)"></i> Didn't connect {{ (outcome.failed / outcome_total * 100) | round | int }}%</span>
+        <span><i style="background:var(--np-viz-4)"></i> Still dialling {{ (outcome.dialling / outcome_total * 100) | round | int }}%</span>
+      </div>
+      {% else %}
+      <p class="meta" style="margin:0">Outcomes appear as calls complete.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ---- agents table (variant B) ---- #}
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Your agents, right now</h3>
+    <a href="/" style="font-size:0.8125rem; color:var(--bc-accent-ink)">View all</a></div>
+  {% if agents %}
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr>
+        <th>Agent</th><th>Status</th><th style="min-width:220px">Progress</th>
+        <th class="num">Reached</th><th class="num">Results</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for a in agents %}
+        <tr>
+          <td>
+            <span class="cell-strong">{{ a.name }}</span><br>
+            <span class="meta-sm">{{ (a.list or 'NO LIST') | upper }}</span>
+          </td>
+          <td>{{ status_pill(a) }}</td>
+          <td>
+            <span class="row" style="gap:0.6rem; align-items:center">
+              <span class="track" style="flex:1; min-width:110px"><span class="fill {{ 'warn' if a.status == 'halted' }}" style="width:{{ ((a.done / a.total * 100) | round | int) if a.total else 0 }}%"></span></span>
+              <span class="cell-mono" style="font-size:0.75rem">{{ a.done }}/{{ a.total }}</span>
+            </span>
+          </td>
+          <td class="num">{{ a.reached if a.reached else '—' }}</td>
+          <td class="num">{{ a.results if a.results else '—' }}</td>
+          <td>
+            {% if a.status == 'finished' %}
+            <a href="/agents/{{ a.id }}/results" class="btn btn-ghost btn-sm" style="min-height:26px">Results</a>
+            {% elif a.status == 'halted' %}
+            <a href="/agents/{{ a.id }}/launch" class="btn btn-ghost btn-sm" style="min-height:26px; color:var(--bc-magenta-ink)">Why?</a>
+            {% else %}
+            <a href="/agents/{{ a.id }}/launch" class="btn btn-ghost btn-sm" style="min-height:26px">Monitor</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="panel-foot"><span class="meta-sm">RUN TOTALS, NOT JUST TODAY · A PAUSED OR HALTED AGENT LOSES NOTHING — RESUME PICKS UP WHERE IT LEFT OFF</span></div>
+  {% else %}
+  <div class="panel-body">
+    <div class="empty">
+      <span class="pulse lg" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+      <h3 class="h3">Nothing has launched yet</h3>
+      <p style="margin:0.35rem 0 1rem; color:var(--bc-text-2)">Once an agent launches, its run shows up here — live.</p>
+      <a class="btn btn-primary" href="/">Go to your agents</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

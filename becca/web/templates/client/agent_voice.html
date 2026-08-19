@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Voice — {{ agent.name }} — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'agents' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block steps %}{% with steps_current = 3, agent = agent %}{% include 'client/_steps.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Agents / {{ agent.name }}{% endblock %}
+{% block heading %}How it should sound{% endblock %}
+{% block content %}
+
+{% if saved %}
+<div class="callout" style="margin-bottom:1rem">Saved. The next test call uses these settings.</div>
+{% endif %}
+{% if frozen %}
+<div class="callout" style="margin-bottom:1rem">
+  <strong>This agent has run.</strong> Its voice and behaviour are fixed the way it launched;
+  duplicate the agent to change them.
+</div>
+{% endif %}
+
+<form method="post" action="/agents/{{ agent.id }}/voice">
+<input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+<div class="split-even" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:start">
+
+  <div class="stack" style="display:grid; gap:1rem">
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="h4" style="margin:0">Voice</h3>
+        <span class="meta-sm">{{ voices | length }} CURATED · FLAT-RATE · PREVIEW COSTS NOTHING ON A CALL</span>
+      </div>
+      <div class="panel-body stack">
+        {% for v in voices %}
+        <label class="row between" style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0.75rem; border:1px solid {{ 'var(--bc-accent-ink)' if v.id == effective.voice else 'var(--bc-hairline)' }}; border-radius:8px; cursor:pointer">
+          <span class="row" style="display:flex; align-items:center; gap:0.75rem">
+            <button class="btn btn-ghost btn-sm preview-btn" type="button"
+                    data-voice="{{ v.id }}" aria-label="Preview {{ v.name }}">▶</button>
+            <span class="stack-sm" style="display:grid; gap:0.1rem">
+              <span class="h5" style="margin:0">{{ v.name }}</span>
+              <span class="meta-sm">{{ v.gender | upper }} · {{ v.blurb | upper }}</span>
+            </span>
+          </span>
+          <input type="radio" name="voice" value="{{ v.id }}"
+                 {{ 'checked' if v.id == effective.voice }} {{ 'disabled' if frozen }}>
+        </label>
+        {% endfor %}
+        <div class="grid2" style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem">
+          <div class="field">
+            <label for="voice_speed">Speaking speed</label>
+            <input class="input" id="voice_speed" name="voice_speed" type="number"
+                   step="0.05" min="0.25" max="2.0" value="{{ effective.voice_speed }}"
+                   {{ 'disabled' if frozen }}>
+            <p class="hint">voice_settings.voice_speed · 0.25–2.0 · preview plays at your speed</p>
+          </div>
+          <div class="field">
+            <label for="transcription_model">Transcription model</label>
+            <select class="select" id="transcription_model" name="transcription_model" {{ 'disabled' if frozen }}>
+              {% for m, label in stt_models %}
+              <option value="{{ m }}" {{ 'selected' if m == effective.transcription_model }}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <p class="hint">transcription.model · how the agent hears the contact</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3 class="h4" style="margin:0">When it reaches voicemail</h3></div>
+      <div class="panel-body">
+        <div class="callout warn">
+          <strong>Not configurable yet.</strong> Answering-machine detection already runs on
+          every dialled call, and detected machines are recorded in results. What the agent
+          should <em>do</em> on a machine is a pending decision — Telnyx rejected every
+          documented shape for this setting when probed, so no control is shown rather than
+          one that silently does nothing.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stack" style="display:grid; gap:1rem">
+    <div class="panel">
+      <div class="panel-head"><h3 class="h4" style="margin:0">Conversation model</h3></div>
+      <div class="panel-body stack">
+        {% for m in models %}
+        <label class="row between" style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0.75rem; border:1px solid {{ 'var(--bc-accent-ink)' if m.id == effective.model else 'var(--bc-hairline)' }}; border-radius:8px; cursor:pointer">
+          <span class="stack-sm" style="display:grid; gap:0.1rem">
+            <span class="h5" style="margin:0">{{ m.label }}</span>
+            <span class="meta-sm">{{ m.note | upper }}</span>
+          </span>
+          <input type="radio" name="model" value="{{ m.id }}"
+                 {{ 'checked' if m.id == effective.model }} {{ 'disabled' if frozen }}>
+        </label>
+        {% endfor %}
+        <p class="hint" style="margin:0">The mind on the call. Turn-time figures are measured on real test calls.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3 class="h4" style="margin:0">Call behaviour</h3></div>
+      <div class="panel-body stack">
+        <label class="row between" style="display:flex; justify-content:space-between; align-items:center">
+          <span class="stack-sm" style="display:grid; gap:0"><span style="font-size:0.875rem">Let the caller interrupt</span><span class="meta-sm">interruption_settings.enable</span></span>
+          <input type="checkbox" name="interruption" {{ 'checked' if effective.interruption }} {{ 'disabled' if frozen }}>
+        </label>
+        <div class="row between" style="display:flex; justify-content:space-between; align-items:center">
+          <span class="stack-sm" style="display:grid; gap:0"><span style="font-size:0.875rem">Keep transcripts</span><span class="meta-sm">privacy_settings.data_retention</span></span>
+          <span class="pill" data-s="ok">Always on — answers need them</span>
+        </div>
+        <div class="grid2" style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem">
+          <div class="field">
+            <label for="time_limit_secs">Hard call limit (seconds)</label>
+            <input class="input" id="time_limit_secs" name="time_limit_secs" type="number"
+                   min="30" max="14400" value="{{ effective.time_limit_secs }}" {{ 'disabled' if frozen }}>
+            <p class="hint">telephony_settings.time_limit_secs · 30–14400</p>
+          </div>
+          <div class="field">
+            <label for="idle_timeout_secs">Hang up after silence (seconds)</label>
+            <input class="input" id="idle_timeout_secs" name="idle_timeout_secs" type="number"
+                   min="5" max="600" value="{{ effective.idle_timeout_secs }}" {{ 'disabled' if frozen }}>
+            <p class="hint">telephony_settings.user_idle_timeout_secs</p>
+          </div>
+        </div>
+      </div>
+      {% if not frozen %}
+      <div class="panel-foot">
+        <span class="meta-sm">APPLIES FROM THE NEXT TEST CALL · LOCKED AT LAUNCH</span>
+        <button class="btn btn-primary btn-sm" type="submit">Save voice &amp; behaviour</button>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-body">
+        <div class="row between" style="display:flex; justify-content:space-between">
+          <a class="btn btn-ghost btn-sm" href="/agents/{{ agent.id }}">Back to guide</a>
+          <a class="btn btn-secondary btn-sm" href="/agents/{{ agent.id }}/test">Continue to test</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="/static/voice.js"></script>
+{% endblock %}

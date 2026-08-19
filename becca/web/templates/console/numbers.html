@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Numbers &amp; capacity — Becca console{% endblock %}
+{% block nav %}{% with nav_active = 'numbers' %}{% include "console/_nav.html" %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ staff.email[:1] | upper }}{% endblock %}
+{% block tenant_name %}{{ staff.email.split('@')[0] | capitalize }}{% endblock %}
+{% block tenant_kind %}BECCA{% endblock %}
+{% block crumb %}Becca console{% endblock %}
+{% block heading %}Numbers &amp; capacity{% endblock %}
+{% block actions %}
+<form method="post" action="/numbers/order">
+  <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+  <button class="btn btn-secondary btn-sm" type="submit">Order a number</button>
+</form>
+{% endblock %}
+{% block content %}
+
+{% if error == 'ceiling' %}
+<div class="callout warn"><strong>That allocation does not fit.</strong>
+  The pool is {{ split.ceiling }} channels across every client — take some from another client first.</div>
+{% elif error == 'dialling' %}
+<div class="callout warn"><strong>Reassignment refused.</strong>
+  A run is dialling on that number right now; pause or let it finish first.</div>
+{% elif error == 'order' %}
+<div class="callout warn"><strong>Ordering failed.</strong>
+  Telnyx had no Nigerian number available, or the request was refused. Try Mission Control.</div>
+{% elif error == 'missing' %}
+<div class="callout warn"><strong>That record no longer exists.</strong></div>
+{% elif done == 'ordered' %}
+<div class="callout"><strong>Number ordered.</strong> It is in the inventory below — assign it to a client.</div>
+{% elif done == 'assigned' %}
+<div class="callout"><strong>Assignment saved.</strong></div>
+{% elif done == 'groups' %}
+<div class="callout"><strong>Billing groups created and numbers attached.</strong>
+  Cost attribution now lands per client on the detail records.</div>
+{% elif done == 'allocated' %}
+<div class="callout"><strong>Allocation saved.</strong></div>
+{% elif done == 'noted' %}
+<div class="callout"><strong>Account notes saved.</strong></div>
+{% endif %}
+
+{% if warn == 'billing_group' %}
+<div class="callout warn"><strong>The billing group step failed at Telnyx.</strong>
+  The assignment itself saved, but cost attribution is not set up — retry below before this
+  client's first billed run (detail records never backfill).</div>
+{% endif %}
+
+{% if not synced %}
+<div class="callout warn"><strong>Telnyx is unreachable</strong> — showing the last-known inventory.
+  Assignments still save; statuses may be stale.</div>
+{% endif %}
+
+{# FR-BILL-3 backfill: assignments made before billing groups existed.
+   Empty (and invisible) once every assigned number is attached. #}
+{% if missing_groups %}
+<div class="callout warn">
+  <strong>{{ missing_groups | map(attribute='name') | join(', ') }}
+    {{ 'has' if missing_groups | length == 1 else 'have' }} numbers but no billing group.</strong>
+  Costs dialled before the group exists can never be attributed — detail records are historical
+  snapshots. Create and attach now, before the first billed run.
+  <form method="post" action="/billing-groups/ensure" style="margin-top:0.5rem">
+    <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+    <button class="btn btn-secondary btn-sm" type="submit">Create billing groups now</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Channel pool</h3>
+    <span class="meta-sm">{{ split.ceiling }} CONCURRENT · FIXED (FR-NF-1) · ZERO-SUM</span></div>
+  <div class="panel-body stack">
+    {% if split.allocated %}
+    <div class="stackbar" style="height:18px" aria-hidden="true">
+      {% for c in split.clients if c.allocation %}
+      <i style="width:{{ (c.allocation / split.ceiling * 100) | round(1) }}%; background:var(--np-viz-{{ loop.index0 % 4 + 1 }})"></i>
+      {% endfor %}
+      {% if split.unallocated %}<i style="width:{{ (split.unallocated / split.ceiling * 100) | round(1) }}%; background:var(--bc-surface-alt)"></i>{% endif %}
+    </div>
+    <div class="legend">
+      {% for c in split.clients if c.allocation %}
+      <span><i style="background:var(--np-viz-{{ loop.index0 % 4 + 1 }})"></i> {{ c.name }} {{ c.allocation }}</span>
+      {% endfor %}
+      <span><i style="background:var(--bc-surface-alt)"></i> Reserve {{ split.unallocated }}</span>
+    </div>
+    <div class="divider"></div>
+    {% endif %}
+    {% for c in split.clients %}
+    <form method="post" action="/allocation/{{ c.id }}" class="map-row"
+          style="grid-template-columns:minmax(0,1fr) 130px minmax(0,1.2fr) 110px">
+      <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+      <span class="cell-strong">{{ c.name }}</span>
+      <span class="row" style="gap:0.4rem">
+        <input name="channels" type="number" min="0" max="{{ split.ceiling }}" value="{{ c.allocation }}"
+               style="width:4.5rem" aria-label="Channels for {{ c.name }}">
+        <span class="meta-sm">CH</span>
+      </span>
+      <span class="meta-sm">{% if c.in_use %}{{ c.in_use }} IN USE NOW{% else %}0 IN USE{% endif %}</span>
+      <button class="btn btn-ghost btn-sm" type="submit" style="min-height:26px">Save</button>
+    </form>
+    {% endfor %}
+    <div class="map-row" style="grid-template-columns:minmax(0,1fr) 130px minmax(0,1.2fr) 110px">
+      <span style="color:var(--bc-text-3)">Unallocated</span>
+      <span class="cell-mono" style="color:var(--bc-text-3)">{{ split.unallocated }} channel{{ 's' if split.unallocated != 1 }}</span>
+      <span class="meta-sm">HEADROOM FOR A NEW CLIENT</span>
+      <span></span>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Number inventory</h3>
+    <span class="meta-sm">{{ inventory | length }} NUMBER{{ 'S' if inventory | length != 1 }} · SYNCED FROM TELNYX ON LOAD</span></div>
+  <div class="tbl-wrap">
+    <table class="tbl" style="min-width:880px">
+      <thead><tr><th>Number</th><th>Country</th><th>Assigned to</th><th>Use</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for n in inventory %}
+        <tr>
+          <td class="cell-mono">{{ n.e164 }}</td>
+          <td>{{ 'Nigeria' if n.country == 'NG' else n.country }}</td>
+          <td>{% if n.client_name %}<span class="cell-strong">{{ n.client_name }}</span>
+            {% else %}<span style="color:var(--bc-text-3)">Unassigned</span>{% endif %}</td>
+          <td class="cell-mono">{{ n.use | capitalize if n.client_id else '—' }}</td>
+          <td>
+            {% if n.status == 'active' %}
+            <span class="pill" data-s="ok"><span aria-hidden="true">✓</span> Live</span>
+            {% else %}
+            <span class="pill" data-s="idle"><span aria-hidden="true">◷</span> {{ n.status | capitalize }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if n.dialling %}
+            <span class="meta-sm" title="Reassignment is refused while a run is dialling on this number">DIALLING · LOCKED</span>
+            {% else %}
+            <form method="post" action="/numbers/{{ n.id }}/assign" class="row" style="gap:0.4rem">
+              <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+              <select name="client_id" aria-label="Assign {{ n.e164 }}" style="min-width:9rem">
+                <option value="">Unassigned</option>
+                {% for c in split.clients %}
+                <option value="{{ c.id }}" {% if n.client_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn btn-ghost btn-sm" type="submit" style="min-height:26px">
+                {{ 'Reassign' if n.client_id else 'Assign' }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center; color:var(--bc-text-2); padding:2rem">
+          No numbers yet. Order one, or check the Telnyx connection.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="split">
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Where we can call</h3>
+      <span class="meta-sm">OUTBOUND VOICE PROFILE{% if destinations %} · {{ destinations | length }} ENABLED{% endif %}</span></div>
+    {# The live profile whitelists dozens of countries — cap the card and
+       let the list scroll inside it. #}
+    <div class="panel-body" style="padding-top:var(--np-space-2); max-height:19rem; overflow-y:auto">
+      {% if destinations is none %}
+      <p class="meta">Could not read the outbound voice profile from Telnyx.</p>
+      {% elif not destinations %}
+      <p class="meta">No destinations are enabled — nobody can be dialled.</p>
+      {% else %}
+      {% for d in destinations %}
+      <div class="map-row" style="grid-template-columns:minmax(0,1fr) 130px">
+        <span class="cell-strong">{{ 'Nigeria' if d == 'NG' else 'United Kingdom' if d == 'GB' else d }}</span>
+        <span class="pill" data-s="ok">✓ Enabled</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Account &amp; compliance</h3>
+      <span class="meta-sm">STAFF-RECORDED · NOT FROM THE API</span></div>
+    <div class="panel-body stack-sm">
+      <form method="post" action="/account-note" class="stack-sm">
+        <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+        <div class="field">
+          <label for="verification_tier">Verification tier</label>
+          <input id="verification_tier" name="verification_tier"
+                 value="{{ note.verification_tier if note and note.verification_tier else '' }}"
+                 placeholder="e.g. Tier 2 verified — 10 concurrent">
+        </div>
+        <div class="field">
+          <label for="doc_expiry">Regulatory document expiry</label>
+          <input id="doc_expiry" name="doc_expiry" type="date"
+                 value="{{ note.doc_expiry.isoformat() if note and note.doc_expiry else '' }}">
+          <p class="hint">Telnyx does not expose these in the API; record what Mission Control shows.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" type="submit">Save notes</button>
+        {% if note %}
+        <p class="meta-sm" style="margin:0">LAST RECORDED BY {{ note.updated_by | upper }}
+          · {{ note.updated_at.strftime('%d %b %Y') }}</p>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

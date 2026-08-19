@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Becca{% endblock %}
+{% block nav %}{% include "client/_nav.html" %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:1] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT{% endblock %}
+{% block crumb %}{{ ctx.account_name }}{% endblock %}
+{% block heading %}Notifications{% endblock %}
+{% block content %}
+{% with csrf = ctx.session.csrf_token %}{% include "_notifications_body.html" %}{% endwith %}
+{% endblock %}

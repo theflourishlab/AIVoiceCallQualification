@@ -1,0 +1,180 @@
+{# Review screen, guided-sections layout (14 Aug 2026 redesign — verdict
+   on branch prototype/agent-review: variant D centred, C's fix-it
+   treatment, extracted fields in their own scrollable card). One
+   artifact, three numbered views, read top to bottom. #}
+{% extends "base.html" %}
+{% block title %}{{ agent.name }} — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'agents' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block steps %}{% with steps_current = 2, agent = agent %}{% include 'client/_steps.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Agents / {{ agent.name }} · v{{ agent.version_n }} · {{ agent.status | upper }}{% endblock %}
+{% block heading %}
+<form method="post" action="/agents/{{ agent.id }}/name" style="display:inline-flex; align-items:center">
+  <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+  <input class="input" name="name" value="{{ agent.name }}" aria-label="Agent name"
+         maxlength="80" required title="The agent's name — click to rename"
+         style="font-family:var(--bc-font-display); font-weight:700; font-size:1.375rem; letter-spacing:-0.015em; background:transparent; border-color:transparent; padding:0.1rem 0.4rem; min-height:0; width:min(26ch, 60vw)"
+         onfocus="this.style.borderColor='var(--np-border-strong)'"
+         onblur="this.style.borderColor='transparent'"
+         onchange="this.form.submit()">
+</form>
+{% endblock %}
+{% block content %}
+
+<div style="max-width:940px; margin:0 auto">
+
+<form id="review-form" method="post" action="/agents/{{ agent.id }}/versions">
+  <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+  <input type="hidden" name="content_json" id="content-json">
+
+  {# ---------- 1 · the call guide ---------- #}
+  <p class="meta-sm" style="margin:0 0 0.2rem">1 · THE ONE ARTIFACT</p>
+  <h3 class="h4" style="margin:0 0 0.35rem">The call guide</h3>
+  <p style="margin:0 0 0.75rem; font-size:0.875rem; color:var(--bc-text-2)">
+    Everything else on this page is a view of this guide. Edit the words directly,
+    or describe a problem below and Becca rewrites just that part.</p>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="meta-sm">{{ '{:,}'.format(spoken_preview | length) }} CHARS · ~{{ ((spoken_preview | length) / 32) | round | int }} SEC OF SPEECH</span>
+      <button class="btn btn-ghost btn-sm" type="button" id="insert-field">Insert field</button>
+    </div>
+    <div class="panel-body">
+      <div class="instr" id="script-editor" contenteditable="true" spellcheck="false"
+           style="white-space:pre-wrap; font-size:1rem"
+      >{% for b in content.script_blocks %}{% if b.type == 'text' %}{{ b.content | script_bold(loop.first) }}{% else %}<span class="v-chip" contenteditable="false" data-field-id="{{ b.field_id }}">{{ content.field_by_id(b.field_id).key }}</span>{% endif %}{% endfor %}</div>
+      <p class="hint" style="margin-top:0.75rem">
+        Type <span class="cell-mono">/</span> to insert a field. A chip is one
+        character: the cursor never enters it, and backspace removes it whole.
+      </p>
+      <div class="divider" style="margin:1rem 0"></div>
+      <div class="field">
+        <label for="fixit">Something read wrong?</label>
+        <textarea class="textarea" id="fixit" name="problem" form="fix-form"
+          style="min-height:64px" required
+          placeholder="Make the tone warmer. Don't mention pricing at all."></textarea>
+        <div class="dictate" data-dictate="#fixit"></div>
+        <p class="hint">
+          Describe it and Becca rewrites just that part — your fields stay as
+          they are. For precise wording, edit the guide above directly; no AI
+          is involved in a manual edit.
+        </p>
+      </div>
+      <button class="btn btn-secondary btn-sm" type="submit" form="fix-form">Fix the guide</button>
+    </div>
+  </div>
+
+  <div class="divider" style="margin:1.5rem 0"></div>
+
+  {# ---------- 2 · what the list must supply ---------- #}
+  <p class="meta-sm" style="margin:0 0 0.2rem">2 · DERIVED FROM THE GUIDE · READ ONLY</p>
+  <h3 class="h4" style="margin:0 0 0.35rem">Fields your contact list must have</h3>
+  <p style="margin:0 0 0.75rem; font-size:0.875rem; color:var(--bc-text-2)">
+    These are exactly the chips the guide uses — nothing to keep in sync. To add
+    or remove one, edit the guide. Rename freely: a name lives in one place.</p>
+  <div class="panel">
+    <div class="panel-body" id="inputs-view" style="padding-top:0.5rem; padding-bottom:0.5rem">
+      {% for f in inputs %}
+      <div class="map-row" style="grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr)">
+        <span class="tag var">{{ f.key }}</span>
+        <span class="meta-sm">{{ 'REQUIRED' if f.required else 'OPTIONAL' }}</span>
+        <span class="meta-sm">{{ input_uses.get(f.id, 0) }} USE{{ 'S' if input_uses.get(f.id, 0) != 1 }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="panel-foot">
+      <span class="meta-sm">{{ inputs | selectattr('required') | list | length }} REQUIRED · {{ inputs | rejectattr('required') | list | length }} OPTIONAL</span>
+    </div>
+  </div>
+
+  <div class="divider" style="margin:1.5rem 0"></div>
+
+  {# ---------- 3 · what gets extracted ---------- #}
+  <p class="meta-sm" style="margin:0 0 0.2rem">3 · EDIT FREELY · FREEZES AT LAUNCH</p>
+  <h3 class="h4" style="margin:0 0 0.35rem">What gets extracted after the call</h3>
+  <p style="margin:0 0 0.75rem; font-size:0.875rem; color:var(--bc-text-2)">
+    Typed fields are filterable and exportable; free text is not. Keep tuning these
+    through test calls — they lock only when the agent launches.</p>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="meta-sm">{{ outputs | length }} FIELD{{ 'S' if outputs | length != 1 }}</span>
+      <button class="btn btn-ghost btn-sm" type="button" id="add-output">Add field</button>
+    </div>
+    <div class="panel-body" style="padding-top:0; padding-bottom:0">
+      {# The card scrolls, the page doesn't — long schemas stay handled. #}
+      <div style="max-height:340px; overflow-y:auto; padding:0.5rem 0">
+        <div id="outputs-editor">
+          {% for f in outputs %}
+          <div class="schema-row output-row" data-field-id="{{ f.id }}">
+            <input class="output-key" value="{{ f.key }}" aria-label="Field name">
+            <select class="output-type" aria-label="Type">
+              <option value="enum" {{ 'selected' if f.type == 'enum' }}>ENUM</option>
+              <option value="text" {{ 'selected' if f.type == 'text' }}>TEXT</option>
+            </select>
+            <input class="output-values" value="{{ f.values | join(', ') }}"
+                   placeholder="values, comma-separated" aria-label="Enum values"
+                   {{ 'hidden' if f.type != 'enum' }}>
+            <label class="meta-sm"><input type="checkbox" class="output-required"
+                   {{ 'checked' if f.required }}> REQUIRED</label>
+            <button class="btn btn-ghost btn-sm output-remove" type="button" aria-label="Remove">✕</button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="panel-foot">
+      <span class="meta-sm">{{ outputs | selectattr('type', 'equalto', 'enum') | list | length }} TYPED · {{ outputs | selectattr('type', 'equalto', 'text') | list | length }} FREE TEXT · <span style="color:var(--bc-accent-ink)">EDITABLE UNTIL LAUNCH</span></span>
+      <span style="font-size:0.8125rem; color:var(--bc-text-2)">Typed fields are filterable and exportable. Free text is not.</span>
+    </div>
+  </div>
+
+  <div class="panel" style="position:sticky; bottom:0.5rem; z-index:5; margin-top:1.5rem">
+    <div class="panel-foot" style="border-top:0">
+      <span class="meta-sm" id="dirty-hint" hidden
+            style="color:var(--bc-magenta-ink)">UNSAVED EDITS — SAVE THEM TO CONTINUE</span>
+      <div class="row" style="gap:0.5rem; margin-left:auto">
+        <a class="btn btn-ghost btn-sm" href="/">Back</a>
+        <button class="btn btn-secondary btn-sm" type="submit"
+                title="Manual edits to the guide or extracted fields persist only when saved">
+          Save edits as v{{ agent.version_n + 1 }}</button>
+        <a class="btn btn-primary btn-sm" id="continue-voice"
+           href="/agents/{{ agent.id }}/voice">Continue to voice</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<form id="fix-form" method="post" action="/agents/{{ agent.id }}/regenerate">
+  <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+  <input type="hidden" name="return_to" value="review">
+</form>
+
+{% if agent.status in ('draft', 'tested') %}
+<details style="margin-top:1rem">
+  <summary class="meta-sm" style="cursor:pointer; color:var(--bc-magenta-ink)">DELETE THIS AGENT</summary>
+  <div class="callout warn" style="margin-top:0.75rem">
+    <strong>This removes {{ agent.name }} completely</strong> — its guide, versions,
+    test history and any contact lists uploaded for it. There is no undo.
+    <form method="post" action="/agents/{{ agent.id }}/delete" style="margin-top:0.75rem">
+      <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+      <button class="btn btn-secondary btn-sm" type="submit"
+              style="color:var(--bc-magenta-ink); border-color:var(--bc-magenta-ink)">
+        Yes, delete {{ agent.name }}</button>
+    </form>
+  </div>
+</details>
+{% else %}
+<p class="meta-sm" style="margin-top:1rem">
+  THIS AGENT HAS RUN — ITS CALLS AND RESULTS ARE RECORDS, SO IT CANNOT BE DELETED.
+</p>
+{% endif %}
+
+</div>
+
+<script type="application/json" id="field-data">{{ field_data | tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="/static/chips.js"></script>
+<script src="/static/dictate.js"></script>
+{% endblock %}

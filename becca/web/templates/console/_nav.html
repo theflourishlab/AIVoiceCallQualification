@@ -1,0 +1,19 @@
+{# The console's information architecture (prototype screens 18-21).
+   Billing & margin arrives with Phase 7 — visible but inert, so the map
+   stays honest about what exists. Context: nav_active. #}
+<p class="meta-sm" style="margin:0">CONSOLE</p>
+<ul class="nav-list">
+  <li><a href="/" {% if nav_active == 'clients' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">◉</span> Clients</a></li>
+  <li><a href="/billing" {% if nav_active == 'billing' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">₦</span> Billing &amp; margin</a></li>
+  <li><a href="/numbers" {% if nav_active == 'numbers' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">☏</span> Numbers &amp; capacity</a></li>
+  <li><a href="/staff" {% if nav_active == 'staff' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">◇</span> Becca staff</a></li>
+  <li><a href="/notifications" {% if nav_active == 'notifications' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">◔</span> Notifications
+    <span id="notif-badge" style="display:none; margin-left:auto; min-width:1.2rem; height:1.2rem;
+      padding:0 0.3rem; border-radius:999px; background:var(--bc-accent-ink); color:#fff;
+      font-size:0.7rem; font-weight:700; align-items:center; justify-content:center"></span></a></li>
+</ul>

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ client.name }} — wallet ledger — Becca console{% endblock %}
+{% block nav %}{% with nav_active = 'billing' %}{% include "console/_nav.html" %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ staff.email[:1] | upper }}{% endblock %}
+{% block tenant_name %}{{ staff.email.split('@')[0] | capitalize }}{% endblock %}
+{% block tenant_kind %}BECCA{% endblock %}
+{% block crumb %}<a href="/billing">Billing &amp; wallets</a> / {{ client.name }}{% endblock %}
+{% block heading %}{{ client.name }} — wallet{% endblock %}
+{% block content %}
+
+<div class="grid3" style="margin-bottom:1rem">
+  <div class="kpi"><span class="l">Balance</span>
+    <span class="v num" {% if client.balance < 0 %}style="color:var(--bc-magenta-ink)"{% endif %}>
+      ${{ '%.2f' | format(client.balance) }}</span>
+    <span class="d">{% if client.balance < 0 %}negative — all dialling blocked until topped up{% else %}prepaid{% endif %}</span></div>
+  <div class="kpi"><span class="l">Rate</span><span class="v num">${{ '%.2f' | format(client.rate_per_min) }}</span>
+    <span class="d">per minute, rounded up</span></div>
+  <div class="kpi"><span class="l">Credited all-time</span><span class="v num">${{ '%.2f' | format(client.credited_total) }}</span>
+    <span class="d">billed ${{ '%.2f' | format(client.billed_mtd) }} MTD</span></div>
+</div>
+
+<div class="panel" style="margin-bottom:1rem">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Post an adjustment</h3>
+    <span class="meta-sm">SIGNED · NOTE REQUIRED · APPEND-ONLY</span></div>
+  <div class="panel-body">
+    <form method="post" action="/billing/adjust/{{ client.id }}" class="row" style="gap:0.5rem; flex-wrap:wrap">
+      <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+      <input name="amount_usd" type="number" step="0.01" min="-100000" max="100000"
+             placeholder="±USD" style="width:7rem" required aria-label="Adjustment amount">
+      <input name="note" placeholder="why (required — e.g. mistyped top-up, was 30 not 50)"
+             style="flex:1; min-width:16rem" required aria-label="Adjustment note">
+      <button class="btn btn-secondary btn-sm" type="submit">Post adjustment</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Ledger</h3>
+    <span class="meta-sm">NEWEST FIRST · LAST {{ entries | length }} ENTRIES</span></div>
+  <div class="tbl-wrap">
+    <table class="tbl" style="min-width:760px">
+      <thead><tr>
+        <th>When</th><th>Entry</th><th>Agent</th><th class="num">Minutes</th>
+        <th class="num">Amount</th><th>Note</th>
+      </tr></thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="cell-mono">{{ e.created_at.strftime('%d %b %H:%M') }}</td>
+          <td>
+            {% if e.entry_type == 'credit' %}<span class="pill" data-s="ok">Top-up</span>
+            {% elif e.entry_type == 'debit_call' %}<span class="pill" data-s="live">Call</span>
+            {% elif e.entry_type == 'debit_test_call' %}<span class="pill" data-s="idle">Test call</span>
+            {% else %}<span class="pill" data-s="fail">Adjustment</span>{% endif %}
+          </td>
+          <td>{{ e.agent_name or '—' }}</td>
+          <td class="num">{{ e.billed_minutes if e.billed_minutes is not none else '—' }}</td>
+          <td class="num cell-strong">{{ '−' if e.amount < 0 }}${{ '%.2f' | format(e.amount | abs) }}</td>
+          <td class="meta-sm">{{ e.note }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center; color:var(--bc-text-2); padding:2rem">
+          Nothing yet — the first entry will be a top-up.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

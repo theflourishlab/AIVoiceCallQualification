@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Launch — {{ agent.name }} — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'agents' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Agents / {{ agent.name }}{% endblock %}
+{% block heading %}{{ 'Run status' if running else 'Schedule & launch' }}{% endblock %}
+{% block steps %}{% with steps_current = 6 %}{% include 'client/_steps.html' %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="stack" style="display:grid; gap:var(--np-space-5)">
+
+{% if error == 'preflight' %}
+<div class="callout warn"><strong>Launch refused.</strong> A pre-flight check failed on the
+  server. The list below is current — fix what it shows and try again.</div>
+{% elif error == 'days' %}
+<div class="callout warn"><strong>Pick at least one calling day.</strong></div>
+{% elif error == 'list' %}
+<div class="callout warn"><strong>That list belongs to a different agent.</strong></div>
+{% endif %}
+
+{% if running %}
+
+<div class="split">
+  <div class="panel">
+    <div class="panel-head">
+      <h3 class="h4" style="margin:0">{{ agent.name }}</h3>
+      <span class="pill" data-s="{{ 'live' if agent.status == 'dialling' and not paused else 'warn' if paused else 'ok' if agent.status == 'finished' else 'idle' }}">
+        {{ 'paused' if paused and agent.status == 'dialling' else agent.status }}</span>
+    </div>
+    <div class="panel-body stack" style="display:grid; gap:var(--np-space-3)">
+      <div class="row between"><span class="meta">QUEUED</span><span class="cell-mono" id="live-pending">{{ stats.get('pending', 0) }}</span></div>
+      <div class="row between"><span class="meta">IN FLIGHT</span><span class="cell-mono" id="live-dialling">{{ stats.get('dialling', 0) }}</span></div>
+      <div class="row between"><span class="meta">DONE</span><span class="cell-mono" id="live-done">{{ stats.get('done', 0) }}</span></div>
+      <div class="row between"><span class="meta">FAILED</span><span class="cell-mono" id="live-failed">{{ stats.get('failed', 0) }}</span></div>
+      <div class="row between"><span class="meta">SKIPPED</span><span class="cell-mono" id="live-skipped">{{ stats.get('skipped', 0) }}</span></div>
+      <div class="row between"><span class="meta">WITH RESULTS</span><span class="cell-mono"><a id="live-with_results" href="/agents/{{ agent.id }}/results">–</a></span></div>
+      {% if schedule %}
+      <div class="divider"></div>
+      <span class="meta-sm">WINDOW {{ schedule[0] }}–{{ schedule[1] }} · SPEND CAP ${{ schedule[4] }}
+        · {{ schedule[6] }} RETR{{ 'Y' if schedule[6] == 1 else 'IES' }}</span>
+      {% endif %}
+    </div>
+    <div class="panel-foot">
+      {% if agent.status in ('scheduled', 'dialling') %}
+      <div class="row" style="gap:var(--np-space-2)">
+        {% if paused %}
+        <form method="post" action="/agents/{{ agent.id }}/resume">
+          <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+          <button class="btn btn-primary btn-sm" type="submit">Resume</button>
+        </form>
+        {% else %}
+        <form method="post" action="/agents/{{ agent.id }}/pause">
+          <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+          <button class="btn btn-secondary btn-sm" type="submit">Pause</button>
+        </form>
+        {% endif %}
+        <form method="post" action="/agents/{{ agent.id }}/stop"
+              onsubmit="return confirm('Stop this run? Undialled contacts stay undialled and the run cannot be restarted.')">
+          <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+          <button class="btn btn-ghost btn-sm" type="submit">Stop run</button>
+        </form>
+      </div>
+      <span class="meta-sm">PAUSE LETS CALLS IN FLIGHT FINISH. STOP IS FINAL.</span>
+      {% else %}
+      <span class="meta-sm">THIS AGENT HAS RUN. DUPLICATE IT TO CALL AGAIN.</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">What was launched</h3></div>
+    <div class="panel-body stack" style="display:grid; gap:var(--np-space-3)">
+      {% if list_entry %}
+      <div class="row between"><span class="meta">LIST</span><span class="cell-strong">{{ list_entry.filename }}</span></div>
+      <div class="row between"><span class="meta">DIALLABLE</span><span class="cell-mono">{{ diallable }}</span></div>
+      {% endif %}
+      <span class="meta-sm">THE EXTRACTION SCHEMA IS FROZEN FOR THE LIFE OF THE RUN.</span>
+    </div>
+  </div>
+</div>
+
+{% else %}
+
+{% if not acknowledged %}
+<div class="panel" style="border-color:var(--bc-accent-ink)">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Before your first launch</h3><span class="meta-sm">ONCE, EVER</span></div>
+  <div class="panel-body stack" style="display:grid; gap:var(--np-space-3)">
+    <p style="margin:0; font-size:0.875rem; color:var(--bc-text-2)">
+      The people on your lists are expecting contact from your business, and you hold
+      whatever permission your jurisdiction requires to call them. Becca places the calls;
+      the relationship and the lawful basis are yours.</p>
+    {% if ctx.role == 'owner' %}
+    <form method="post" action="/agents/{{ agent.id }}/acknowledge">
+      <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+      <button class="btn btn-primary btn-sm" type="submit">I confirm — record my acceptance</button>
+    </form>
+    {% else %}
+    <span class="meta-sm" style="color:var(--bc-magenta-ink)">ONLY AN OWNER CAN ACCEPT THIS.</span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="split">
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3 class="h4" style="margin:0">Schedule &amp; launch</h3>
+      <span class="meta-sm">{{ diallable }} CONTACTS · INCLUDES RETRIES</span>
+    </div>
+    <form method="post" action="/agents/{{ agent.id }}/launch">
+      <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+      <div class="panel-body stack" style="display:grid; gap:var(--np-space-4)">
+
+        <div>
+          <label class="meta" for="list_id">CONTACT LIST</label>
+          <select class="input" id="list_id" name="list_id" style="width:100%; margin-top:0.35rem">
+            {% for l in lists %}
+            <option value="{{ l.id }}" {% if list_entry and l.id == list_entry.id %}selected{% endif %}>
+              {{ l.filename }} — {{ l.diallable_count }} diallable</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="row" style="gap:var(--np-space-3)">
+          <div style="flex:1">
+            <label class="meta" for="window_start">CALL FROM</label>
+            <input class="input" id="window_start" name="window_start" type="time" value="09:00"
+                   required style="width:100%; margin-top:0.35rem">
+          </div>
+          <div style="flex:1">
+            <label class="meta" for="window_end">UNTIL</label>
+            <input class="input" id="window_end" name="window_end" type="time" value="17:00"
+                   required style="width:100%; margin-top:0.35rem">
+          </div>
+        </div>
+
+        <div>
+          <span class="meta">ON THESE DAYS (CONTACT'S LOCAL TIME, LAGOS)</span>
+          <div class="row" style="gap:var(--np-space-3); margin-top:0.35rem; flex-wrap:wrap">
+            {% for d, name in [(1,'Mon'),(2,'Tue'),(3,'Wed'),(4,'Thu'),(5,'Fri'),(6,'Sat'),(7,'Sun')] %}
+            <label style="font-size:0.8125rem; color:var(--bc-text-2)">
+              <input type="checkbox" name="day_{{ d }}" value="1" {% if d <= 5 %}checked{% endif %}> {{ name }}</label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div>
+          <label class="meta" for="excluded_bands">EXCLUDED BANDS (OPTIONAL, E.G. 13:00-14:00)</label>
+          <input class="input" id="excluded_bands" name="excluded_bands" type="text"
+                 placeholder="13:00-14:00" style="width:100%; margin-top:0.35rem">
+        </div>
+
+        <div class="row" style="gap:var(--np-space-3)">
+          <div style="flex:1">
+            <label class="meta" for="retry_attempts">RETRIES PER CONTACT</label>
+            <input class="input" id="retry_attempts" name="retry_attempts" type="number"
+                   min="0" max="5" value="1" style="width:100%; margin-top:0.35rem">
+          </div>
+          <div style="flex:1">
+            <label class="meta" for="retry_interval_secs">RETRY AFTER (SECONDS)</label>
+            <input class="input" id="retry_interval_secs" name="retry_interval_secs" type="number"
+                   min="60" step="60" value="3600" style="width:100%; margin-top:0.35rem">
+          </div>
+        </div>
+
+        <div class="row" style="gap:var(--np-space-3)">
+          <div style="flex:1">
+            <label class="meta" for="spend_cap">SPEND CAP (USD)</label>
+            <input class="input" id="spend_cap" name="spend_cap" type="number" min="1" step="1"
+                   value="{{ suggested_cap | int }}" required style="width:100%; margin-top:0.35rem">
+          </div>
+          <div style="flex:1">
+            <label class="meta" for="not_before">DON'T START BEFORE (OPTIONAL)</label>
+            <input class="input" id="not_before" name="not_before" type="datetime-local"
+                   style="width:100%; margin-top:0.35rem">
+          </div>
+        </div>
+
+      </div>
+      <div class="panel-foot">
+        <span class="meta-sm">REACHING THE CAP PAUSES THE RUN. NOTHING IS LOST.</span>
+        {% if ctx.role == 'owner' %}
+        <button class="btn btn-primary" type="submit" {% if not preflight.ok %}disabled title="Fix the pre-flight failures first"{% endif %}>Launch</button>
+        {% else %}
+        <span class="meta-sm" style="color:var(--bc-magenta-ink)">ONLY AN OWNER CAN LAUNCH</span>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3 class="h4" style="margin:0">Pre-flight</h3>
+      {% if preflight.ok %}
+      <span class="pill" data-s="ok"><span aria-hidden="true">✓</span> Ready</span>
+      {% else %}
+      <span class="pill" data-s="fail"><span aria-hidden="true">✕</span> {{ preflight.failures | length }} blocking</span>
+      {% endif %}
+    </div>
+    <div class="panel-body stack" style="display:grid; gap:var(--np-space-4)">
+      <ul class="check">
+        {% for c in preflight.blocking %}
+        <li data-s="{{ 'ok' if c.ok else 'warn' }}">
+          <span class="g" aria-hidden="true">{{ '✓' if c.ok else '✕' }}</span>
+          <span>{{ c.label }}</span></li>
+        {% endfor %}
+      </ul>
+      <div class="divider"></div>
+      {% for a in preflight.advisories %}
+      <li class="check" style="list-style:none; font-size:0.875rem; color:var(--bc-text-2)">
+        <span>! {{ a }}</span></li>
+      {% endfor %}
+      <span class="meta-sm">CHECKED AGAIN ON THE SERVER AT LAUNCH — A STALE PAGE CANNOT BYPASS IT.</span>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% if running and agent.status in ('scheduled', 'dialling') %}
+<script>
+  // The live monitor (SD-09): counters pushed over SSE while the run
+  // moves; a status change reloads into the finished layout.
+  const source = new EventSource('/agents/{{ agent.id }}/run-events');
+  source.onmessage = (event) => {
+    const d = JSON.parse(event.data);
+    for (const key of ['pending', 'dialling', 'done', 'failed', 'skipped', 'with_results']) {
+      const el = document.getElementById('live-' + key);
+      if (el) el.textContent = d[key];
+    }
+    if (d.status && d.status !== '{{ agent.status }}') { source.close(); location.reload(); }
+  };
+</script>
+{% endif %}
+{% endblock %}

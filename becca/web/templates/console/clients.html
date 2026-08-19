@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Clients — Becca console{% endblock %}
+{% block nav %}{% with nav_active = 'clients' %}{% include "console/_nav.html" %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ staff.email[:1] | upper }}{% endblock %}
+{% block tenant_name %}{{ staff.email.split('@')[0] | capitalize }}{% endblock %}
+{% block tenant_kind %}BECCA{% endblock %}
+{% block crumb %}Becca console{% endblock %}
+{% block heading %}Clients{% endblock %}
+{% block actions %}
+<a class="btn btn-primary btn-sm" href="/clients/new">New client account</a>
+{% endblock %}
+{% block content %}
+
+{# FR-NOTIFY-2A: balance and projected exhaustion live persistently on the
+   landing screen — a zero balance stops every client at once and they
+   will not know why. Never a dismissible notification. #}
+{% if not balance.available %}
+<div class="callout warn">
+  <strong>Telnyx balance is unavailable right now.</strong>
+  The console could not reach Telnyx — check Mission Control directly. A zero
+  balance stops every client at once.
+</div>
+{% elif balance.days_left is not none and balance.days_left < warn_days %}
+<div class="callout warn">
+  <strong>Balance runs out {{ balance.exhaustion_date.strftime('%d %b') }} at the current burn.</strong>
+  ${{ '%.2f' | format(balance.credit) }} left, spending about
+  ${{ '%.2f' | format(balance.burn_per_day) }}/day. Top up before it lapses —
+  a zero balance stops every client at once, and they will not know why.
+</div>
+{% endif %}
+
+<div class="grid4">
+  <div class="kpi"><span class="l">Active clients</span><span class="v">{{ kpi.active }}</span>
+    <span class="d">{{ kpi.onboarding }} onboarding</span></div>
+  <div class="kpi"><span class="l">Calls this month</span><span class="v">{{ '{:,}'.format(kpi.calls_mtd) }}</span>
+    <span class="d">across all clients</span></div>
+  <div class="kpi"><span class="l">Channels allocated</span><span class="v">{{ split.allocated }} / {{ split.ceiling }}</span>
+    <span class="d">{{ split.unallocated }} held in reserve</span></div>
+  <div class="kpi"><span class="l">Telnyx balance</span>
+    {% if balance.available %}
+    <span class="v">${{ '%.2f' | format(balance.credit) }}</span>
+    <span class="d">
+      {% if balance.exhaustion_date %}runs out {{ balance.exhaustion_date.strftime('%d %b') }} at current burn
+      {% else %}not enough history to project burn yet{% endif %}
+    </span>
+    {% else %}
+    <span class="v" style="color:var(--bc-text-3)">—</span>
+    <span class="d">Telnyx unreachable</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Client accounts</h3>
+    <span class="meta-sm">BILLED = WALLET DEBITS THIS MONTH, TEST CALLS INCLUDED · RATES AND CREDITS ON BILLING</span></div>
+  <div class="tbl-wrap">
+    <table class="tbl" style="min-width:940px">
+      <thead>
+        <tr><th>Client</th><th class="num">People</th><th class="num">Channels</th><th>Number</th>
+          <th class="num">Calls MTD</th><th class="num">Billed MTD</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for c in clients %}
+        <tr>
+          <td class="cell-strong">{{ c.name }}</td>
+          <td class="num cell-mono">
+            <a href="/clients/{{ c.id }}/people" style="color:var(--bc-accent-ink)"
+               title="See and manage who can sign in to {{ c.name }}">{{ c.people }}</a></td>
+          <td class="num">{{ c.channels }}</td>
+          <td class="cell-mono">{% if c.number %}{{ c.number }}{% else %}<span style="color:var(--bc-text-3)">not assigned</span>{% endif %}</td>
+          <td class="num">{% if c.calls_mtd %}{{ '{:,}'.format(c.calls_mtd) }}{% else %}—{% endif %}</td>
+          <td class="num cell-strong">{% if c.billed_mtd %}${{ '%.2f' | format(c.billed_mtd) }}{% else %}<span style="color:var(--bc-text-3)">—</span>{% endif %}</td>
+          <td>
+            {% if c.status == 'dialling' %}
+            <span class="pill" data-s="live">Dialling</span>
+            {% elif c.status == 'onboarding' %}
+            <span class="pill" data-s="idle"><span aria-hidden="true">◷</span> Onboarding</span>
+            {% else %}
+            <span class="pill" data-s="ok"><span aria-hidden="true">✓</span> {{ c.status | capitalize }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" action="/clients/{{ c.id }}/enter" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+              <button class="btn btn-secondary btn-sm" type="submit">Enter</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center; color:var(--bc-text-2); padding:2rem">
+          No client accounts yet.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="split">
+  {# FR-CONSOLE-4: an onboarding checklist per client still setting up —
+     mirroring the launch pre-flight, so this panel never promises what
+     launch would refuse. #}
+  {% for chk in checklists %}
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Setting up {{ chk.client.name }}</h3>
+      <span class="meta-sm">{{ chk.done }} OF {{ chk.checks | length }} DONE</span></div>
+    <div class="panel-body">
+      <ul class="check">
+        {% for item in chk.checks %}
+        <li data-s="{{ 'ok' if item.ok else 'warn' }}">
+          <span class="g" aria-hidden="true">{{ '✓' if item.ok else '!' }}</span>
+          <span>{{ item.label }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="panel-foot">
+      <span class="meta-sm">THEY CANNOT LAUNCH UNTIL CHANNELS AND A NUMBER ARE ASSIGNED</span>
+      <a class="btn btn-secondary btn-sm" href="/numbers">Allocate</a>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Account health</h3></div>
+    <div class="panel-body">
+      <ul class="check">
+        {% if note and note.verification_tier %}
+        <li data-s="ok"><span class="g" aria-hidden="true">✓</span>
+          <span>Telnyx {{ note.verification_tier }} — recorded by {{ note.updated_by }}</span></li>
+        {% else %}
+        <li data-s="warn"><span class="g" aria-hidden="true">!</span>
+          <span>Verification tier not recorded yet — note it on <a href="/numbers">Numbers &amp; capacity</a></span></li>
+        {% endif %}
+        {% if destinations is none %}
+        <li data-s="warn"><span class="g" aria-hidden="true">!</span>
+          <span>Could not read enabled destinations from Telnyx</span></li>
+        {% elif 'NG' in destinations %}
+        <li data-s="ok"><span class="g" aria-hidden="true">✓</span>
+          <span>Nigeria enabled on the outbound profile</span></li>
+        {% else %}
+        <li data-s="warn"><span class="g" aria-hidden="true">!</span>
+          <span>Nigeria is NOT enabled on the outbound profile — no client can dial</span></li>
+        {% endif %}
+        {% if clients %}
+        {% set acked = clients | selectattr('acknowledged') | list | length %}
+        <li data-s="{{ 'ok' if acked == clients | length else 'warn' }}">
+          <span class="g" aria-hidden="true">{{ '✓' if acked == clients | length else '!' }}</span>
+          <span>{{ acked }} of {{ clients | length }} client account{{ 's' if clients | length != 1 }} accepted the acknowledgement</span></li>
+        {% endif %}
+        {% if split.unallocated == 0 %}
+        <li data-s="warn"><span class="g" aria-hidden="true">!</span>
+          <span>Pool is fully allocated — a new client needs a rebalance</span></li>
+        {% else %}
+        <li data-s="ok"><span class="g" aria-hidden="true">✓</span>
+          <span>{{ split.unallocated }} channel{{ 's' if split.unallocated != 1 }} in reserve</span></li>
+        {% endif %}
+        {% if note and note.doc_expiry %}
+        <li data-s="{{ 'warn' if note.doc_days_left < 60 else 'ok' }}">
+          <span class="g" aria-hidden="true">{{ '!' if note.doc_days_left < 60 else '✓' }}</span>
+          <span>Regulatory document expires {{ note.doc_expiry.strftime('%d %b %Y') }}{% if note.doc_days_left < 60 %} — renew before it lapses{% endif %}</span></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

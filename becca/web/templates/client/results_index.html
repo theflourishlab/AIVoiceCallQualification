@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Results — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'results' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Results{% endblock %}
+{% block heading %}What the calls came back with{% endblock %}
+{% block content %}
+{% if agents %}
+<div class="panel">
+  <div class="panel-body" style="padding:0">
+    <table class="tbl">
+      <thead><tr><th>Agent</th><th>Status</th><th>Completed calls</th><th>With results</th><th></th></tr></thead>
+      <tbody>
+        {% for a in agents %}
+        <tr>
+          <td class="cell-strong">{{ a.name }}</td>
+          <td><span class="pill" data-s="{{ 'live' if a.status == 'dialling' else 'ok' if a.status == 'finished' else 'idle' }}">{{ a.status }}</span></td>
+          <td class="cell-mono">{{ a.completed }}</td>
+          <td class="cell-mono">{{ a.scored }}</td>
+          <td><a href="/agents/{{ a.id }}/results">Open results</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="panel-foot"><span class="meta-sm">RESULTS ARE AVAILABLE WHILE A RUN IS STILL DIALLING</span></div>
+</div>
+{% else %}
+<div class="empty">
+  <h3 class="h3">No runs yet</h3>
+  <p style="color:var(--bc-text-2)">Results appear here once an agent has launched.</p>
+</div>
+{% endif %}
+{% endblock %}

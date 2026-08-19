@@ -1,0 +1,31 @@
+{# The build-wizard steps bar (prototype screens 03–09).
+   Context: steps_current (1..6), agent (optional — links need its id).
+   Steps whose screens exist link; unbuilt phases render inert. #}
+{% set names = ['Describe', 'Review', 'Voice', 'Test', 'Contacts', 'Launch'] %}
+<div class="steps">
+  {% for name in names %}
+  {% set n = loop.index %}
+  {% set state = 'now' if n == steps_current else ('done' if n < steps_current else '') %}
+  {% set href = None %}
+  {% if agent is defined and agent %}
+    {% if n == 1 %}{% set href = '/agents/' ~ agent.id ~ '/describe' %}
+    {% elif n == 2 %}{% set href = '/agents/' ~ agent.id %}
+    {% elif n == 3 %}{% set href = '/agents/' ~ agent.id ~ '/voice' %}
+    {% elif n == 4 %}{% set href = '/agents/' ~ agent.id ~ '/test' %}
+    {% elif n == 5 %}{% set href = '/contacts?agent=' ~ agent.id %}
+    {% elif n == 6 %}{% set href = '/agents/' ~ agent.id ~ '/launch' %}
+    {% endif %}
+  {% endif %}
+  {% set bubble = '✓' if state == 'done' else n %}
+  {% if href and n != steps_current %}
+  <a class="step" href="{{ href }}" {% if state %}data-s="{{ state }}"{% endif %}
+     style="text-decoration:none">
+    <span class="b">{{ bubble }}</span> {{ name }}</a>
+  {% else %}
+  <span class="step" {% if state %}data-s="{{ state }}"{% endif %}
+        {% if not href and n > steps_current %}title="Coming in a later phase"{% endif %}>
+    <span class="b">{{ bubble }}</span> {{ name }}</span>
+  {% endif %}
+  {% if not loop.last %}<span class="step-line"></span>{% endif %}
+  {% endfor %}
+</div>

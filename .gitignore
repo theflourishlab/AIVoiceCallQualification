@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+dist/
+spike_events.jsonl
+tunnel.log
+.env.staging
+.env.staging.save

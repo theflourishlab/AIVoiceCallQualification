@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}New agent — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'agents' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block steps %}{% with steps_current = 1 %}{% include 'client/_steps.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Agents / New agent{% endblock %}
+{% block heading %}What should this agent do?{% endblock %}
+{% block content %}
+{% if error %}
+<div class="callout warn" style="margin-bottom:1rem">{{ error }}</div>
+{% endif %}
+<div class="split" style="display:grid; grid-template-columns: 3fr 2fr; gap:1rem; align-items:start">
+
+  <div class="stack" style="display:grid; gap:1rem">
+    <form method="post" action="/agents">
+      <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+      <div class="panel">
+        <div class="panel-body">
+          <div class="field">
+            <label for="brief">Describe the call in your own words</label>
+            <textarea class="textarea" id="brief" name="brief" style="min-height:210px" required
+              aria-describedby="brief-hint"
+              placeholder="Call everyone who booked a site visit last week. Remind them of the date and time they picked. Ask if they are still planning to come. If they say no, find out why. Either way, try to find out their budget range and when they are looking to move in."></textarea>
+            <div class="dictate" data-dictate="#brief"></div>
+            <p class="hint" id="brief-hint">
+              Mention every data point you want captured. Anything you name here
+              becomes a field you can filter and export.
+            </p>
+          </div>
+        </div>
+        <div class="panel-foot">
+          <span class="meta-sm">EVERY AGENT STARTS AS A DRAFT</span>
+          <button class="btn btn-primary btn-sm" type="submit">
+            <span class="pulse sm" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+            Build the agent
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div class="callout">
+      <strong>What happens next.</strong> Becca produces three linked things from
+      this: the call guide, the list of contact fields your CSV must supply, and
+      the schema of what gets extracted at the end. You review all three before
+      anything dials.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Briefs that work well</h3></div>
+    <div class="panel-body stack-sm">
+      <p style="margin:0; font-size:0.8125rem; color:var(--bc-text-2)">
+        “Remind them of their <b style="color:var(--bc-text-1)">appointment date</b>”
+        — names a field, so it becomes a CSV column.</p>
+      <div class="divider"></div>
+      <p style="margin:0; font-size:0.8125rem; color:var(--bc-text-2)">
+        “Find out their <b style="color:var(--bc-text-1)">budget range</b>”
+        — names an outcome, so it becomes an extracted insight.</p>
+      <div class="divider"></div>
+      <p style="margin:0; font-size:0.8125rem; color:var(--bc-text-2)">
+        “If they ask about pricing, <b style="color:var(--bc-text-1)">say a consultant
+        will follow up</b>” — names a boundary, so the agent stops guessing.</p>
+    </div>
+  </div>
+
+</div>
+<script src="/static/dictate.js"></script>
+{% endblock %}

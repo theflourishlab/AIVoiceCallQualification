@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Results — {{ agent.name }} — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'results' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Results / {{ agent.name }}{% endblock %}
+{% block heading %}{{ agent.name }}{% endblock %}
+{% block actions %}
+<span class="pill" data-s="{{ 'live' if counters.status == 'dialling' else 'ok' if counters.status == 'finished' else 'idle' }}">{{ counters.status }}</span>
+<a class="btn btn-secondary btn-sm" href="/agents/{{ agent.id }}/results.csv{{ '?' ~ querystring if querystring }}">Export CSV</a>
+{% endblock %}
+{% block content %}
+<div class="stack" style="display:grid; gap:var(--np-space-5)">
+
+<div class="panel">
+  <div class="panel-head">
+    <h3 class="h4" style="margin:0">Filters</h3>
+    <span class="meta-sm">GENERATED FROM THIS RUN'S FROZEN SCHEMA</span>
+  </div>
+  <form method="get" action="/agents/{{ agent.id }}/results">
+    <div class="panel-body row" style="gap:var(--np-space-4); flex-wrap:wrap; align-items:end">
+      {% for f in outputs %}
+      <div style="min-width:150px">
+        <label class="meta" for="f_{{ f.id }}">{{ f.key | upper }}</label>
+        {% if f.type == 'enum' %}
+        <select class="input" id="f_{{ f.id }}" name="f_{{ f.id }}" style="width:100%; margin-top:0.35rem">
+          <option value="">any</option>
+          {% for v in f.values %}
+          <option value="{{ v }}" {% if filters.get(f.id) == v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+        {% else %}
+        <input class="input" id="f_{{ f.id }}" name="f_{{ f.id }}" type="text"
+               value="{{ filters.get(f.id, '') }}" placeholder="contains…"
+               style="width:100%; margin-top:0.35rem">
+        {% endif %}
+      </div>
+      {% endfor %}
+      <button class="btn btn-primary btn-sm" type="submit">Apply</button>
+      {% if filters %}<a class="btn btn-ghost btn-sm" href="/agents/{{ agent.id }}/results">Clear</a>{% endif %}
+    </div>
+  </form>
+  <div class="panel-foot">
+    <div class="row" style="gap:var(--np-space-2); flex-wrap:wrap">
+      <span class="meta-sm">VIEWS:</span>
+      {% for v in views %}
+      <a class="tag {{ 'var' if v.filters == filters else '' }}"
+         href="/agents/{{ agent.id }}/results?{% for k, val in v.filters.items() %}f_{{ k }}={{ val | urlencode }}{{ '&' if not loop.last }}{% endfor %}">{{ v.name }}</a>
+      {% else %}
+      <span class="meta-sm" style="color:var(--bc-text-3)">NONE SAVED — "QUALIFIED" IS A VIEW YOU MAKE</span>
+      {% endfor %}
+    </div>
+    {% if filters %}
+    <form method="post" action="/agents/{{ agent.id }}/views" class="row" style="gap:var(--np-space-2)">
+      <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+      {% for k, v in filters.items() %}<input type="hidden" name="f_{{ k }}" value="{{ v }}">{% endfor %}
+      <input class="input" type="text" name="name" required placeholder="Name this view, e.g. Qualified"
+             style="font-size:0.8125rem">
+      <button class="btn btn-secondary btn-sm" type="submit">Save view</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h3 class="h4" style="margin:0">{{ calls | length }} call{{ '' if calls | length == 1 else 's' }}</h3>
+    <span class="meta-sm">{{ counters.pending + counters.dialling }} STILL TO COME</span>
+  </div>
+  <div class="panel-body" style="padding:0; overflow-x:auto">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Contact</th>
+          {% for f in outputs %}<th>{{ f.key }}</th>{% endfor %}
+          <th>Duration</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in calls %}
+        <tr>
+          <td class="cell-mono">{{ c.phone or '—' }}</td>
+          {% for f in outputs %}
+          {% set r = c.results.get(f.id) %}
+          <td>
+            {% if r %}
+            {{ r.shown }}{% if r.corrected_value is not none %} <span class="meta-sm" title="corrected — original: {{ r.value }}">✎</span>{% endif %}
+            {% else %}<span style="color:var(--bc-text-3)">—</span>{% endif %}
+          </td>
+          {% endfor %}
+          <td class="cell-mono">{{ c.duration_sec ~ 's' if c.duration_sec is not none else '—' }}</td>
+          <td><a href="/agents/{{ agent.id }}/calls/{{ c.id }}{{ '?' ~ querystring if querystring }}">Detail</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="{{ 3 + outputs | length }}" style="color:var(--bc-text-3); padding:var(--np-space-5)">
+          {% if filters %}Nothing matches these filters.{% else %}No completed calls with results yet.{% endif %}
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+{% endblock %}

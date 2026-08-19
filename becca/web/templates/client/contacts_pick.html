@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Contacts — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'contacts' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Contacts{% endblock %}
+{% block heading %}Who are we calling, and as which agent?{% endblock %}
+{% block steps %}{% with steps_current = 5, agent = selected %}{% include 'client/_steps.html' %}{% endwith %}{% endblock %}
+{% block actions %}<span class="meta-sm">STEP 1 OF 2</span>{% endblock %}
+{% block content %}
+{# Full-bleed like the agents list: .gate's 940px cap hugged the left
+   and left a lopsided void on the right (user call, 14 Aug 2026). #}
+<div style="display:grid; gap:var(--np-space-6)">
+
+  {% if error == 'unreadable' %}
+  <div class="callout warn">
+    <strong>That file could not be read.</strong> Becca accepts CSV and XLSX, with a header
+    row and one row per person. Export from your spreadsheet tool and try again.
+  </div>
+  {% endif %}
+
+  {# A list appears here ONLY while its mapping is unfinished — the one
+     job the old "Lists you already have" panel did that agent rows
+     cannot: an orphan has no completed home yet. #}
+  {% for l in orphans %}
+  <div class="note-bar" style="border-color:var(--bc-magenta-ink); background:var(--np-magenta-wash)">
+    <span class="pill" data-s="fail"><span aria-hidden="true">◌</span> Unfinished import</span>
+    <span style="font-size:0.875rem; color:var(--bc-text-1)">
+      <b>{{ l.filename }}</b> was uploaded for {{ l.agent_name }} but never mapped —
+      <span class="num">{{ l.row_count }}</span> row{{ '' if l.row_count == 1 else 's' }} waiting.
+    </span>
+    <a class="btn btn-ghost btn-sm" href="/contacts/{{ l.id }}" style="margin-left:auto">Resume mapping</a>
+  </div>
+  {% endfor %}
+
+  {% if agents %}
+  <div>
+    <h3 class="h3" style="margin-bottom:var(--np-space-1)">Pick the agent this list is for</h3>
+    <p class="lead" style="font-size:0.9375rem">The agent decides which columns your file must
+      contain. Its requirements appear below once picked.</p>
+  </div>
+
+  <div class="panel">
+    {% for a in agents %}
+    {% set pickable = a.tests > 0 and a.version_n > 0 %}
+    {% set picked_now = selected and selected.id == a.id %}
+    {% if pickable %}
+    <a class="agent-row" href="/contacts?agent={{ a.id }}"
+       aria-pressed="{{ 'true' if picked_now else 'false' }}">
+      <span class="dot-sel"></span>
+      <span class="cell-strong">{{ a.name }}</span>
+      <span class="cell-mono">v{{ a.version_n }}</span>
+      <span class="pill" data-s="ok"><span aria-hidden="true">✓</span> tested ×{{ a.tests }}</span>
+      {% if a.contact_count > 0 %}
+      <span class="meta-sm list-status">HAS CONTACTS · <b style="color:var(--bc-text-1)" class="num">{{ a.contact_count }}</b></span>
+      {% else %}
+      <span class="meta-sm list-status">NO CONTACTS YET</span>
+      {% endif %}
+    </a>
+    {% else %}
+    <span class="agent-row" aria-disabled="true">
+      <span class="dot-sel" style="opacity:0.4"></span>
+      <span class="cell-strong">{{ a.name }}</span>
+      <span class="cell-mono">v{{ a.version_n }}</span>
+      <span class="pill" data-s="idle"><span aria-hidden="true">◷</span> never tested</span>
+      <span class="meta-sm list-status" style="color:var(--bc-magenta-ink)">RUN A TEST CALL FIRST</span>
+    </span>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  {% if selected and selected.contact_count > 0 %}
+  <div class="panel">
+    <div class="panel-head">
+      <h3 class="h4" style="margin:0">This agent already has contacts</h3>
+      <span class="meta-sm">FOR {{ selected.name | upper }}</span>
+    </div>
+    <div class="panel-body stack">
+      <div class="callout">
+        <strong class="num">{{ selected.contact_count }} contact{{ '' if selected.contact_count == 1 else 's' }}</strong>
+        {{ 'is' if selected.contact_count == 1 else 'are' }} mapped and ready
+        {% if selected.mapped_lists | length == 1 %}
+        from <strong>{{ selected.mapped_lists[0].filename }}</strong>.
+        {% else %}
+        across {{ selected.mapped_lists | length }} lists.
+        {% endif %}
+        There is nothing left to do here unless you have more people to add.
+        {% if selected.mapped_lists | length == 1 %}
+        <a href="/contacts/{{ selected.mapped_lists[0].id }}" style="color:var(--bc-accent-ink)">View the contacts</a>
+        {% endif %}
+      </div>
+      {% if selected.mapped_lists | length > 1 %}
+      <div>
+        {% for l in selected.mapped_lists %}
+        <div class="map-row" style="grid-template-columns:minmax(0,1.3fr) 90px minmax(0,1fr)">
+          <a class="cell-strong" href="/contacts/{{ l.id }}">{{ l.filename }}</a>
+          <span class="cell-mono num">{{ l.diallable_count }}</span>
+          <span class="meta-sm">MAPPED · READY</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <details>
+        <summary class="meta-sm" style="cursor:pointer">UPLOAD ANOTHER LIST · IT ADDS, NOTHING IS OVERWRITTEN</summary>
+        <div class="stack" style="margin-top:var(--np-space-4)">
+          {% include 'client/_upload_form.html' %}
+        </div>
+      </details>
+    </div>
+  </div>
+  {% elif selected %}
+  <div class="panel">
+    <div class="panel-head">
+      <h3 class="h4" style="margin:0">Then bring the list</h3>
+      <span class="meta-sm">FOR {{ selected.name | upper }}</span>
+    </div>
+    <div class="panel-body stack">
+      {% include 'client/_upload_form.html' %}
+    </div>
+  </div>
+  {% else %}
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Then bring the list</h3><span class="meta-sm">STEP 2</span></div>
+    <div class="panel-body">
+      <div class="empty" style="padding:var(--np-space-6) var(--np-space-4); border:1px dashed var(--np-border-strong); border-radius:var(--np-radius-md)">
+        <p class="meta" style="margin:0">CSV OR XLSX</p>
+        <p style="margin:0; font-size:0.875rem; color:var(--bc-text-2); max-width:38ch">One row per
+          person, a column for the phone number, and a column for each field the agent needs.</p>
+        <button class="btn btn-primary btn-sm" type="button" disabled>Upload and map</button>
+        <p class="meta-sm" style="margin:0">PICK AN AGENT TO ENABLE</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty">
+    <h3 class="h3">No agents yet</h3>
+    <p style="color:var(--bc-text-2)">A contact list belongs to the agent it was mapped for,
+      so the agent comes first.</p>
+    <a class="btn btn-primary" href="/agents/new">Build an agent</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

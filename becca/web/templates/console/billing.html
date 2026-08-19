@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Billing &amp; wallets — Becca console{% endblock %}
+{% block nav %}{% with nav_active = 'billing' %}{% include "console/_nav.html" %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ staff.email[:1] | upper }}{% endblock %}
+{% block tenant_name %}{{ staff.email.split('@')[0] | capitalize }}{% endblock %}
+{% block tenant_kind %}BECCA{% endblock %}
+{% block crumb %}Becca console{% endblock %}
+{% block heading %}Billing &amp; wallets{% endblock %}
+{% block content %}
+
+{% if error == 'amount' %}
+<div class="callout warn"><strong>Amount out of range.</strong> Credits are up to $100,000;
+  adjustments are signed, non-zero, and within the same bound.</div>
+{% elif error == 'note' %}
+<div class="callout warn"><strong>An adjustment needs a note.</strong> The ledger is append-only —
+  the note is the only place the why survives.</div>
+{% elif error == 'rate' %}
+<div class="callout warn"><strong>Rate must be between $0.01 and $10.00 per minute.</strong></div>
+{% elif error == 'transition' %}
+<div class="callout warn"><strong>That status change is not allowed</strong> — a paid invoice
+  never regresses.</div>
+{% elif error == 'missing' %}
+<div class="callout warn"><strong>No such client.</strong></div>
+{% elif done == 'credited' %}
+<div class="callout"><strong>Wallet credited.</strong> The client sees the top-up immediately;
+  paused runs resume on the next resume click.</div>
+{% elif done == 'adjusted' %}
+<div class="callout"><strong>Adjustment posted.</strong></div>
+{% elif done == 'rate' %}
+<div class="callout"><strong>Rate saved.</strong> Applies to calls claimed from now on —
+  in-flight calls keep the rate they dialled under, and the client was notified.</div>
+{% elif done == 'marked' %}
+<div class="callout"><strong>Invoice updated.</strong></div>
+{% endif %}
+
+{% if not synced %}
+<div class="callout warn"><strong>Telnyx is unreachable</strong> — cost figures below are the
+  last-synced values. Wallets and billing are unaffected (they never depend on Telnyx).</div>
+{% endif %}
+
+<div class="split">
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">This month</h3>
+      <span class="meta-sm">BILLED (LEDGER) VS METERED COST · SYNCED ON LOAD</span></div>
+    <div class="panel-body stack-sm">
+      <div class="row between"><span class="meta">BILLED TO CLIENTS MTD</span>
+        <span class="cell-strong num">${{ '%.2f' | format(billed_mtd) }}</span></div>
+      <div class="divider"></div>
+      <div class="row between"><span class="meta">TELNYX COST MTD</span>
+        <span class="cell-strong num">${{ '%.2f' | format(cost_mtd) }}</span></div>
+      <div class="divider"></div>
+      <div class="row between"><span class="meta">GROSS MARGIN MTD</span>
+        <span class="cell-strong num">${{ '%.2f' | format(billed_mtd - cost_mtd) }}</span></div>
+      <span class="meta-sm">COST EXCLUDES NUMBER RENTAL ($35/NO./MO, BECCA-ABSORBED) AND
+        TEST-CALL TELNYX COST (UNJOINABLE) — MARGIN READS SLIGHTLY GENEROUS</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Becca's Telnyx balance</h3>
+      <span class="meta-sm">ACCOUNT-WIDE · NOT CLIENT MONEY</span></div>
+    <div class="panel-body stack-sm">
+      <div class="row between"><span class="meta">BALANCE</span>
+        <span class="cell-strong num">{% if balance.available %}${{ '%.2f' | format(balance.credit) }}{% else %}—{% endif %}</span></div>
+      <div class="divider"></div>
+      <div class="row between"><span class="meta">AT CURRENT BURN</span>
+        <span class="cell-mono">{% if balance.exhaustion_date %}runs out {{ balance.exhaustion_date.strftime('%d %b') }}{% else %}not enough history yet{% endif %}</span></div>
+      {% if balance.days_left is not none and balance.days_left < 30 %}
+      <div class="callout warn">
+        <strong>Top up soon.</strong> A zero balance stops every client at once, and they will not know why.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Client wallets</h3>
+    <span class="meta-sm">PREPAID · FLAT $/MIN, ROUNDED UP · TEST CALLS BILLED</span></div>
+  <div class="tbl-wrap">
+    <table class="tbl" style="min-width:1080px">
+      <thead><tr>
+        <th>Client</th><th class="num">Balance</th><th class="num">Rate/min</th>
+        <th class="num">Billed MTD</th><th class="num">Cost MTD</th><th class="num">Margin MTD</th>
+        <th>Top up / adjust</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for w in wallets %}
+        <tr>
+          <td class="cell-strong">{{ w.name }}</td>
+          <td class="num {% if w.balance < 0 %}cell-strong{% endif %}"
+              {% if w.balance < 0 %}style="color:var(--bc-magenta-ink)"{% endif %}>
+            ${{ '%.2f' | format(w.balance) }}</td>
+          <td>
+            <form method="post" action="/billing/rate/{{ w.id }}" class="row" style="gap:0.3rem">
+              <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+              <input name="rate_per_min" type="number" step="0.01" min="0.01" max="10"
+                     value="{{ '%.2f' | format(w.rate_per_min) }}" style="width:4.5rem"
+                     aria-label="Rate per minute for {{ w.name }}">
+              <button class="btn btn-ghost btn-sm" type="submit" style="min-height:26px">Set</button>
+            </form>
+          </td>
+          <td class="num">${{ '%.2f' | format(w.billed_mtd) }}</td>
+          <td class="num">${{ '%.4f' | format(w.cost_mtd) }}</td>
+          <td class="num">${{ '%.2f' | format(w.margin_mtd) }}</td>
+          <td>
+            <form method="post" action="/billing/credit/{{ w.id }}" class="row" style="gap:0.3rem">
+              <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+              <input name="amount_usd" type="number" step="0.01" min="0.01" max="100000"
+                     placeholder="USD" style="width:5.5rem" required
+                     aria-label="Credit amount for {{ w.name }}">
+              <input name="note" placeholder="transfer ref" style="width:8rem"
+                     aria-label="Note for {{ w.name }} credit">
+              <button class="btn btn-secondary btn-sm" type="submit" style="min-height:26px">Credit</button>
+            </form>
+          </td>
+          <td><a class="btn btn-ghost btn-sm" style="min-height:26px"
+                 href="/billing/wallet/{{ w.id }}">Ledger</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center; color:var(--bc-text-2); padding:2rem">
+          No clients yet.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="panel-foot">
+    <span class="meta-sm">CORRECTIONS: use the Ledger page's adjustment form — signed amount,
+      mandatory note. The ledger is append-only; nothing here can be edited after the fact.</span>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Legacy invoices (receipts)</h3>
+    <span class="meta-sm">PRE-WALLET · AMOUNT = (METERED + NUMBER RENTAL) × (1 + MARGIN)</span></div>
+  <div class="tbl-wrap">
+    <table class="tbl" style="min-width:940px">
+      <thead><tr>
+        <th>Client</th><th>Period</th><th class="num">Telnyx cost</th><th class="num">Number rental</th>
+        <th class="num">Margin</th><th class="num">Amount</th><th>Status</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for i in invoices %}
+        <tr>
+          <td class="cell-strong">{{ i.client }}</td>
+          <td class="cell-mono">{{ i.period }}</td>
+          <td class="num">${{ '%.4f' | format(i.telnyx_cost) }}</td>
+          <td class="num">${{ '%.2f' | format(i.number_mrc) }}</td>
+          <td class="num">{{ '%g' | format(i.margin_pct) }}%</td>
+          <td class="num cell-strong">${{ '%.2f' | format(i.amount) }}</td>
+          <td>
+            {% if i.status == 'paid' %}<span class="pill" data-s="ok"><span aria-hidden="true">✓</span> Paid</span>
+            {% elif i.status == 'sent' %}<span class="pill" data-s="live">Sent</span>
+            {% elif i.status == 'overdue' %}<span class="pill" data-s="fail">Overdue</span>
+            {% else %}<span class="pill" data-s="idle">Draft</span>{% endif %}
+          </td>
+          <td>
+            <span class="row" style="gap:0.35rem">
+              <a class="btn btn-ghost btn-sm" style="min-height:26px"
+                 href="/billing/invoices/{{ i.id }}/pdf" target="_blank">PDF</a>
+              {% if i.status == 'draft' %}
+              <form method="post" action="/billing/invoices/{{ i.id }}/mark" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+                <input type="hidden" name="status" value="sent">
+                <button class="btn btn-ghost btn-sm" type="submit" style="min-height:26px">Mark sent</button>
+              </form>
+              {% endif %}
+              {% if i.status in ('draft', 'sent', 'overdue') %}
+              <form method="post" action="/billing/invoices/{{ i.id }}/mark" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ staff.session.csrf_token }}">
+                <input type="hidden" name="status" value="paid">
+                <button class="btn btn-secondary btn-sm" type="submit" style="min-height:26px">Mark paid</button>
+              </form>
+              {% endif %}
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center; color:var(--bc-text-2); padding:2rem">
+          No legacy invoices — this account has been prepaid from day one.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>Clients never see this screen.</strong> Their wallet page shows the balance, the flat
+  per-minute rate, every ledger line and where to pay — but never Telnyx cost or margin. An
+  empty wallet pauses that client's runs (the prepaid inversion of FR-BILL-8); number rental is
+  Becca-absorbed and never billed to them.
+</div>
+
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Call — {{ call.phone or 'unknown' }} — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'results' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Results / {{ agent.name }} / Call{% endblock %}
+{% block heading %}{{ call.phone or 'Unknown number' }}{% endblock %}
+{% block actions %}
+<span class="meta-sm">{{ position }} OF {{ total }} IN THIS VIEW</span>
+{% if prev_id %}<a class="btn btn-ghost btn-sm" href="/agents/{{ agent.id }}/calls/{{ prev_id }}{{ '?' ~ querystring if querystring }}">← Prev</a>{% endif %}
+{% if next_id %}<a class="btn btn-ghost btn-sm" href="/agents/{{ agent.id }}/calls/{{ next_id }}{{ '?' ~ querystring if querystring }}">Next →</a>{% endif %}
+<a class="btn btn-secondary btn-sm" href="/agents/{{ agent.id }}/results{{ '?' ~ querystring if querystring }}">Back to results</a>
+{% endblock %}
+{% block content %}
+<div class="split">
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3 class="h4" style="margin:0">Transcript</h3>
+      <span class="meta-sm">{{ call.duration_sec ~ 's' if call.duration_sec is not none else '' }}
+        {% if call.recording_id %} · <a href="/agents/{{ agent.id }}/calls/{{ call.id }}/recording">Play recording</a>{% endif %}</span>
+    </div>
+    <div class="panel-body">
+      {% if messages %}
+      <div class="instr" style="max-height:520px">
+        {% for m in messages %}
+        <p><b>{{ 'Agent' if m.role == 'assistant' else 'Contact' }}.</b> {{ m.text }}</p>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="margin:0; font-size:0.875rem; color:var(--bc-text-3)">No transcript was mirrored for this call.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3 class="h4" style="margin:0">What was captured</h3>
+      <span class="meta-sm">EVERY VALUE LINKED TO ITS MOMENT</span>
+    </div>
+    <div class="panel-body stack" style="display:grid; gap:var(--np-space-4)">
+      {% for f in outputs %}
+      {% set r = call.results.get(f.id) %}
+      <div style="border-bottom:1px solid var(--bc-hairline); padding-bottom:var(--np-space-3)">
+        <div class="row between">
+          <span class="meta">{{ f.key | upper }}</span>
+          {% if r and r.corrected_value is not none %}<span class="meta-sm" style="color:var(--bc-accent-ink)">CORRECTED</span>{% endif %}
+        </div>
+        {% if r %}
+        <p style="margin:0.25rem 0; font-size:0.9375rem; color:var(--bc-text-1)">{{ r.shown }}</p>
+        {% if r.corrected_value is not none %}
+        <p class="meta-sm" style="margin:0 0 0.25rem">ORIGINAL: {{ r.value }}</p>
+        {% endif %}
+        {% if r.quote %}
+        <p style="margin:0.25rem 0; font-size:0.8125rem; color:var(--bc-text-2)">
+          &ldquo;{{ r.quote }}&rdquo;
+          {% if r.at is not none %}<span class="meta-sm"> · AT {{ '%d:%02d' | format(r.at // 60, r.at % 60) }}</span>{% endif %}
+        </p>
+        {% else %}
+        <p class="meta-sm" style="margin:0.25rem 0; color:var(--bc-text-3)">NO MOMENT FOUND FOR THIS VALUE — READ THE TRANSCRIPT BEFORE TRUSTING IT</p>
+        {% endif %}
+        <details>
+          <summary class="meta-sm" style="cursor:pointer">Correct this value</summary>
+          <form method="post" action="/agents/{{ agent.id }}/calls/{{ call.id }}/correct"
+                class="row" style="gap:var(--np-space-2); margin-top:0.35rem">
+            <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+            <input type="hidden" name="field_id" value="{{ f.id }}">
+            <input type="hidden" name="return_qs" value="{{ querystring }}">
+            {% if f.type == 'enum' %}
+            <select class="input" name="corrected_value" style="flex:1; font-size:0.8125rem">
+              {% for v in f.values %}<option value="{{ v }}" {% if r.shown == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+            </select>
+            {% else %}
+            <input class="input" type="text" name="corrected_value" value="{{ r.shown }}"
+                   style="flex:1; font-size:0.8125rem">
+            {% endif %}
+            <button class="btn btn-secondary btn-sm" type="submit">Save</button>
+          </form>
+          <p class="meta-sm" style="margin:0.35rem 0 0">THE ORIGINAL IS KEPT ALONGSIDE, NEVER OVERWRITTEN</p>
+        </details>
+        {% else %}
+        <p style="margin:0.25rem 0; font-size:0.875rem; color:var(--bc-text-3)">Not captured on this call.</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

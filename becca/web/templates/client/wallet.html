@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Wallet — Becca{% endblock %}
+{% block nav %}{% with nav_active = 'wallet' %}{% include 'client/_nav.html' %}{% endwith %}{% endblock %}
+{% block tenant_initials %}{{ ctx.account_name[:2] | upper }}{% endblock %}
+{% block tenant_name %}{{ ctx.account_name }}{% endblock %}
+{% block tenant_kind %}CLIENT ACCOUNT{% endblock %}
+{% block crumb %}Client account{% endblock %}
+{% block heading %}Wallet{% endblock %}
+{% block content %}
+
+{% if negative %}
+<div class="callout warn">
+  <strong>Your balance is negative.</strong> All calling — agents and test calls — is paused
+  until a top-up brings it above zero. Nothing is lost; runs resume where they left off.
+</div>
+{% elif low %}
+<div class="callout warn">
+  <strong>Your balance is running low.</strong> When it can no longer cover a call, your
+  agents pause automatically. Top up below to stay ahead of it.
+</div>
+{% endif %}
+
+<div class="grid3" style="margin-bottom:1rem">
+  <div class="kpi"><span class="l">Balance</span>
+    <span class="v num" {% if negative %}style="color:var(--bc-magenta-ink)"{% endif %}>
+      ${{ '%.2f' | format(balance) }}</span>
+    <span class="d">prepaid — calls draw from this</span></div>
+  <div class="kpi"><span class="l">Call rate</span><span class="v num">${{ '%.2f' | format(rate_per_min) }}</span>
+    <span class="d">per minute, every call</span></div>
+  <div class="kpi"><span class="l">How minutes count</span><span class="v">round up</span>
+    <span class="d">a 61-second call bills as 2 minutes</span></div>
+</div>
+
+<div class="split">
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Pricing, plainly</h3>
+      <span class="meta-sm">NO OTHER CHARGES</span></div>
+    <div class="panel-body stack-sm">
+      <p style="margin:0">
+        Calls are billed at <span class="cell-strong num">${{ '%.2f' | format(rate_per_min) }} per minute</span>,
+        rounded up to the next started minute. Test calls are billed at the same rate.
+        Calls that don't connect cost nothing. Your phone number costs you nothing —
+        there is no monthly fee, no platform fee, nothing else.
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3 class="h4" style="margin:0">Top up</h3>
+      <span class="meta-sm">BANK TRANSFER · CREDITED BY YOUR BECCA CONTACT</span></div>
+    <div class="panel-body stack-sm">
+      {% if bank_details %}
+      <p style="margin:0; white-space:pre-line">{{ bank_details }}</p>
+      {% else %}
+      <p style="margin:0; color:var(--bc-text-2)">Your Becca contact will share account details.</p>
+      {% endif %}
+      <span class="meta-sm">SEND YOUR TRANSFER REFERENCE TO YOUR BECCA CONTACT — THE CREDIT
+        APPEARS HERE THE MOMENT IT'S CONFIRMED</span>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Activity</h3>
+    <span class="meta-sm">EVERY LINE, NEWEST FIRST — NOTHING ROLLED UP</span></div>
+  <div class="tbl-wrap">
+    <table class="tbl" style="min-width:640px">
+      <thead><tr>
+        <th>When</th><th>What</th><th class="num">Minutes</th><th class="num">Amount</th>
+      </tr></thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="cell-mono">{{ e.created_at.strftime('%d %b %H:%M') }}</td>
+          <td>
+            {% if e.entry_type == 'credit' %}<span class="pill" data-s="ok">Top-up</span>
+            {% elif e.entry_type == 'debit_call' %}Call{% if e.agent_name %} — {{ e.agent_name }}{% endif %}
+            {% elif e.entry_type == 'debit_test_call' %}Test call{% if e.agent_name %} — {{ e.agent_name }}{% endif %}
+            {% else %}<span class="pill" data-s="idle">Adjustment</span>{% endif %}
+          </td>
+          <td class="num">{{ e.billed_minutes if e.billed_minutes is not none else '—' }}</td>
+          <td class="num cell-strong">{{ '−' if e.amount < 0 }}${{ '%.2f' | format(e.amount | abs) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center; color:var(--bc-text-2); padding:2rem">
+          No activity yet. Once your wallet is funded, every call shows up here.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page > 1 or has_next %}
+  <div class="panel-foot row between">
+    <span>{% if page > 1 %}<a class="btn btn-ghost btn-sm" href="/wallet?page={{ page - 1 }}">Newer</a>{% endif %}</span>
+    <span class="meta-sm">PAGE {{ page }}</span>
+    <span>{% if has_next %}<a class="btn btn-ghost btn-sm" href="/wallet?page={{ page + 1 }}">Older</a>{% endif %}</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if receipts %}
+<div class="panel">
+  <div class="panel-head"><h3 class="h4" style="margin:0">Past invoices</h3>
+    <span class="meta-sm">FROM BEFORE PREPAID BILLING · KEPT AS RECEIPTS</span></div>
+  <div class="tbl-wrap">
+    <table class="tbl" style="min-width:520px">
+      <thead><tr><th>Period</th><th class="num">Amount</th><th>Status</th><th>Paid</th><th></th></tr></thead>
+      <tbody>
+        {% for i in receipts %}
+        <tr>
+          <td class="cell-mono">{{ i.period }}</td>
+          <td class="num cell-strong">${{ '%.2f' | format(i.amount) }}</td>
+          <td>
+            {% if i.status == 'paid' %}<span class="pill" data-s="ok"><span aria-hidden="true">✓</span> Paid</span>
+            {% elif i.status == 'overdue' %}<span class="pill" data-s="fail">Overdue</span>
+            {% else %}<span class="pill" data-s="live">Due</span>{% endif %}
+          </td>
+          <td class="cell-mono">{{ i.paid_at.strftime('%d %b %Y') if i.paid_at else '—' }}</td>
+          <td><a class="btn btn-ghost btn-sm" style="min-height:26px"
+                 href="/billing/invoices/{{ i.id }}/pdf" target="_blank">PDF</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

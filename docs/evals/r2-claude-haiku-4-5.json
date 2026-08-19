@@ -1,0 +1,247 @@
+{
+  "batch": "r2-claude-haiku-4-5",
+  "rubric_version": 1,
+  "generated_at": "2026-08-13T12:24:57.537543+00:00",
+  "criteria": [
+    {
+      "id": "annotation_leak",
+      "title": "Annotation leakage",
+      "kind": "mechanical",
+      "definition": "The agent spoke markup aloud: mustache ({{...}}), a bracketed field reference ([key]), or a [value: label] annotation."
+    },
+    {
+      "id": "long_turn",
+      "title": "Turn length",
+      "kind": "mechanical",
+      "definition": "An agent turn ran past the 'one or two sentences' rule (flagged at three or more)."
+    },
+    {
+      "id": "ack_tic",
+      "title": "Acknowledgement tic",
+      "kind": "mechanical",
+      "definition": "Consecutive agent turns opened with the same acknowledgement ('Got it, thanks X' every turn)."
+    },
+    {
+      "id": "verbatim_repeat",
+      "title": "Verbatim repetition",
+      "kind": "mechanical",
+      "definition": "The agent said the same sentence twice in one call."
+    },
+    {
+      "id": "redundant_question",
+      "title": "Redundant question",
+      "kind": "judged",
+      "definition": "The agent asked the contact for information the DETAILS FOR THIS CALL block already contained (e.g. asking for a name or requirement that was provided as a value)."
+    },
+    {
+      "id": "invention",
+      "title": "Invention",
+      "kind": "judged",
+      "definition": "The agent stated a name, fact, or detail that appears nowhere in its instructions and nowhere in the contact's own turns \u2014 invented, replaced, or 'corrected' a provided value."
+    },
+    {
+      "id": "context_loss",
+      "title": "Re-asking / context loss",
+      "kind": "judged",
+      "definition": "The agent re-asked a question the contact had already answered in this call, or lost a correction the contact made about themselves (e.g. buy vs rent)."
+    },
+    {
+      "id": "mishear_adoption",
+      "title": "Mishear adoption",
+      "kind": "judged",
+      "definition": "The transcript shows an obvious transcription mishear and the agent ADOPTED it as fact (repeated the garbled name/word back, built on it) instead of gliding past or clarifying. The mishear itself is not the violation; adopting it is."
+    },
+    {
+      "id": "plan_deviation",
+      "title": "Plan adherence",
+      "kind": "judged",
+      "definition": "The agent skipped a plan step, took steps out of order, packed several asks into one turn, answered for the contact, or improvised beyond the plan instead of deflecting off-plan questions to a follow-up from the team."
+    },
+    {
+      "id": "closing_naturalness",
+      "title": "Closing & naturalness",
+      "kind": "judged",
+      "definition": "The close was abrupt, cold, or missing once the plan was complete; or delivery was unnatural \u2014 numbers/dates read as digits, stiff recited phrasing, robotic register."
+    }
+  ],
+  "totals": {
+    "annotation_leak": 0,
+    "long_turn": 11,
+    "ack_tic": 0,
+    "verbatim_repeat": 0,
+    "redundant_question": 0,
+    "invention": 0,
+    "context_loss": 1,
+    "mishear_adoption": 5,
+    "plan_deviation": 2,
+    "closing_naturalness": 1
+  },
+  "calls": [
+    {
+      "label": "test-8",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "anthropic/claude-haiku-4-5",
+      "turns": 13,
+      "agent_turns": 7,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 3,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 0,
+        "mishear_adoption": 3,
+        "plan_deviation": 0,
+        "closing_naturalness": 1
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 2,
+          "quote": "Wonderful, thank you so much for picking up! I'm calling on behalf of Silverstar, and I'm just checking in to see if you might be interested in buying or selling property. Is now an okay time for a quick chat?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 6,
+          "quote": "That's great to hear! I'm glad you're thinking about that. Can you tell me a bit more \u2014 what property are you looking to sell?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "mishear_adoption",
+          "turn": 6,
+          "quote": "That's great to hear! I'm glad you're thinking about that. Can you tell me a bit more \u2014 what property are you looking to sell?",
+          "note": "The agent adopts the mishear 'Floris' as the contact's name instead of the given contact_name 'Flourish', building on the mishear rather than using the correct provided value."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 10,
+          "quote": "Perfect, that makes sense. Well, I really appreciate you taking the time to chat with me today, Floris. It's brilliant to hear about your plans to sell the land, and I'll make sure the team at Silverstar knows. Someone from our side will be in touch with you personally to discuss things further. Thanks so much for your time \u2014 we truly value hearing from you!",
+          "note": "5 sentences in one turn"
+        },
+        {
+          "criterion": "mishear_adoption",
+          "turn": 10,
+          "quote": "I really appreciate you taking the time to chat with me today, Floris.",
+          "note": "Agent continues to address the contact as 'Floris' despite the details specifying the contact_name is 'Flourish', adopting the contact's mishear of their own name."
+        },
+        {
+          "criterion": "mishear_adoption",
+          "turn": 10,
+          "quote": "It's brilliant to hear about your plans to sell the land, and I'll make sure the team at Silverstar knows.",
+          "note": "Agent treats the garbled answer 'Stanley is the main focus right now' (turn 9) as a coherent answer confirming selling is the focus, without seeking clarification on the nonsensical reply."
+        },
+        {
+          "criterion": "closing_naturalness",
+          "turn": 12,
+          "quote": "Cheers, Floris! Take care!",
+          "note": "Continues using the mishear name 'Floris' in the final closing line instead of the correct provided name 'Flourish'."
+        }
+      ],
+      "judge_overall": "The call generally followed the plan well - warm opening, selling interest captured, buying interest asked. However there's a clear mishear_adoption violation where the contact's garbled \"Stanley is the main focus right now\" was adopted without clarification, and a plan_deviation where the agent packed the property-type question into the buying question and asked an extra \"is selling the main focus\" question not in the plan, then moved straight to close without ever asking about property type for selling (land) which was already answered, but skipped the follow-up on the odd \"Stanley\" answer entirely - treating it as answered when it clearly wasn't a real answer. Also the name mishear \"Floris\" was adopted by the agent from turn 6 onward instead of using the correct \"Flourish\" as given in the details."
+    },
+    {
+      "label": "test-9",
+      "source": "test_run",
+      "agent": "Buyer/Seller Intent Check",
+      "conversation_model": "anthropic/claude-haiku-4-5",
+      "turns": 20,
+      "agent_turns": 10,
+      "counts": {
+        "annotation_leak": 0,
+        "long_turn": 8,
+        "ack_tic": 0,
+        "verbatim_repeat": 0,
+        "redundant_question": 0,
+        "invention": 0,
+        "context_loss": 1,
+        "mishear_adoption": 2,
+        "plan_deviation": 2,
+        "closing_naturalness": 0
+      },
+      "violations": [
+        {
+          "criterion": "long_turn",
+          "turn": 1,
+          "quote": "That's brilliant, Flurry! I'm calling on behalf of Silverstar, and I'm just checking in on your interest in buying or selling property. It sounds like you're looking to rent though \u2014 that's great to know.\n\nJust to get a fuller picture, are you currently looking to sell a property at all?",
+          "note": "4 sentences in one turn"
+        },
+        {
+          "criterion": "mishear_adoption",
+          "turn": 1,
+          "quote": "That's brilliant, Flurry! I'm calling on behalf of Silverstar",
+          "note": "The contact's name is Flourish per instructions, but the agent adopted the garbled transcription 'Flurry' and used it as the contact's name, building on the mishear."
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 1,
+          "quote": "I'm calling on behalf of Silverstar, and I'm just checking in on your interest in buying or selling property. It sounds like you're looking to rent though \u2014 that's great to know.\n\nJust to get a fuller picture, are you currently looking to sell a property at all?",
+          "note": "The agent skipped confirming it was speaking with the right person (the required opening confirmation step) and jumped straight into the selling-interest question, combining multiple plan steps into one turn."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 3,
+          "quote": "Got it, thanks for letting me know. So you're focused on renting a flat in Yaba \u2014 that's helpful. What sort of budget range do you have in mind for rent?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 5,
+          "quote": "Perfect, thank you for that \u2014 three million. And just to confirm, you're looking for a rental flat in Yaba, is that right? Are you open to any particular style or size, or do you have something specific in mind?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "plan_deviation",
+          "turn": 5,
+          "quote": "And just to confirm, you're looking for a rental flat in Yaba, is that right? Are you open to any particular style or size, or do you have something specific in mind?",
+          "note": "The agent packed the rental-vs-purchase question and the property-type question into a single turn instead of asking them separately per the plan."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 7,
+          "quote": "That's completely fine, Flurry. Well, I really appreciate you taking the time to chat with me today, and thank you for sharing your plans with us. The team at Silverstar truly",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 9,
+          "quote": "Oh, that's wonderful, Flurry! So you're looking to buy a property outright rather than rent \u2014 I'm glad you mentioned that. \n\nWhat",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "context_loss",
+          "turn": 9,
+          "quote": "Oh, that's wonderful, Flurry! So you're looking to buy a property outright rather than rent \u2014 I'm glad you mentioned that. \n\nWhat",
+          "note": "Agent continues using the mishear name 'Flurry' even after the contact had already changed their stated intent, showing it had not yet registered the correct name Flourish, which the contact had to correct in turn 12."
+        },
+        {
+          "criterion": "mishear_adoption",
+          "turn": 11,
+          "quote": "And is that three million",
+          "note": "The agent continues to ask about the previous rental budget of three million even after the contact has switched to buying outright, without acknowledging the shift in context properly before the name correction interrupts."
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 13,
+          "quote": "You're absolutely right, Flourish \u2014 my apologies for that. Thank you for correcting me.\n\nSo with buying outright, is that three million still the budget you're working with?",
+          "note": "3 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 15,
+          "quote": "Excellent, Flourish \u2014 so up to sixty million. That's really helpful to know.\n\nWhat kind of property are you looking to buy? For instance, are you thinking a flat, a house, land, or something else?",
+          "note": "4 sentences in one turn"
+        },
+        {
+          "criterion": "long_turn",
+          "turn": 17,
+          "quote": "Perfect, Flourish. A house it is \u2014 that's great to know.\n\nI really appreciate you taking the time to chat with me today and sharing your plans. The team at Silverstar truly values hearing what you're looking for, and someone from the team will be in touch with you personally to explore options that match what you're after. Thank you so much!",
+          "note": "5 sentences in one turn"
+        }
+      ],
+      "judge_overall": "The agent handled the pivot from renting to buying reasonably well and correctly adopted the \"Flourish\" name correction once the contact provided it. However, it adopted the mishear \"Flurry\" for several turns before correction, it skipped the proper opening confirmation step, and it collapsed multiple plan steps together at times, and prematurely began closing before eliciting the buying-interest details fully (interrupted by contact's own change of mind)."
+    }
+  ]
+}

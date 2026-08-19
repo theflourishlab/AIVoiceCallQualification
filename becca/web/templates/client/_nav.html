@@ -1,0 +1,25 @@
+{# The client plane's information architecture (prototype). Sections whose
+   phases are unbuilt are visible but inert — the map is honest about
+   what exists. Context: nav_active. #}
+<ul class="nav-list">
+  <li><a href="/overview" {% if nav_active == 'overview' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">◈</span> Overview</a></li>
+  <li><a href="/" {% if nav_active == 'agents' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">◆</span> Agents</a></li>
+  <li><a href="/contacts" {% if nav_active == 'contacts' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">≡</span> Contacts</a></li>
+  <li><a href="/results" {% if nav_active == 'results' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">▤</span> Results</a></li>
+  <li><a href="/wallet" {% if nav_active == 'wallet' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">₦</span> Wallet</a></li>
+  <li><a href="/notifications" {% if nav_active == 'notifications' %}aria-current="page"{% endif %}>
+    <span class="ico" aria-hidden="true">◔</span> Notifications
+    <span id="notif-badge" style="display:none; margin-left:auto; min-width:1.2rem; height:1.2rem;
+      padding:0 0.3rem; border-radius:999px; background:var(--bc-accent-ink); color:#fff;
+      font-size:0.7rem; font-weight:700; align-items:center; justify-content:center"></span></a></li>
+</ul>
+<div class="nav-sep"></div>
+<ul class="nav-list">
+  <li><a aria-disabled="true" title="Coming later"
+         style="opacity:0.38; pointer-events:none"><span class="ico" aria-hidden="true">⚙</span> Settings</a></li>
+</ul>

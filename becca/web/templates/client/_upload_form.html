@@ -1,0 +1,25 @@
+{# The one-gesture upload (redesign, 14 Aug 2026): a single button opens
+   the OS file picker and choosing a file submits at once. The input is
+   visually hidden, not display:none, so keyboard focus and the required
+   validation still work; without JS the fallback submit shows. #}
+<div class="row" style="gap:var(--np-space-2)">
+  <span class="meta-sm" style="margin-right:var(--np-space-2)">NEEDS THESE COLUMNS</span>
+  <span class="tag var">phone number</span>
+  {% for f in selected.contract %}<span class="tag var">{{ f.key }}</span>{% endfor %}
+</div>
+<form method="post" action="/contacts/upload" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ ctx.session.csrf_token }}">
+  <input type="hidden" name="agent_id" value="{{ selected.id }}">
+  <div class="empty" style="padding:var(--np-space-6) var(--np-space-4); border:1px dashed var(--np-border-strong); border-radius:var(--np-radius-md)">
+    <p class="meta" style="margin:0">CSV OR XLSX · FOR {{ selected.name | upper }}</p>
+    <p style="margin:0; font-size:0.875rem; color:var(--bc-text-2); max-width:38ch">One row per
+      person. We check the header row against the columns above before anything imports.</p>
+    <label class="btn btn-primary btn-sm" style="cursor:pointer">
+      Upload and map
+      <input class="visually-hidden" type="file" name="file" accept=".csv,.xlsx" required
+             onchange="this.form.submit()">
+    </label>
+    <p class="meta-sm" style="margin:0">OPENS YOUR FILE PICKER · IMPORT STARTS ON SELECT</p>
+    <noscript><button class="btn btn-secondary btn-sm" type="submit">Upload the chosen file</button></noscript>
+  </div>
+</form>
