@@ -2,7 +2,6 @@
 
 Becca lets a business owner describe a phone call in plain English, then builds a voice agent that places that call to an imported contact list and brings back structured answers — one row of results per person called, with every extracted value linked back to the moment in the transcript that produced it.
 
-Becca runs it as an agency: one telephony account serves several client businesses, who never see each other, never see cost, and never touch infrastructure.
 
 ## Live deployment
 
