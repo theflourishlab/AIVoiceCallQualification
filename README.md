@@ -26,17 +26,19 @@ Describe the conversation you want to have. Becca generates the agent, calls you
 
 > **How might we let any organization — whether a bank with 40,000 customers or a growing business with 4,000 — call every single lead and get back structured, qualifiable answers, without the overhead of a human call center?**
 
-Phone calls decide everything in Nigerian business: whether the loan is repaid, the appointment kept, the ticket upgraded, the lead ever real. And every organisation is sitting on a queue of calls it knows it should be making and isn't.
+**Nothing qualifies a lead like a phone call.** A text gets skimmed and an email gets ignored — a call gets answered, and answers back, in the same minute. Businesses already know this: SMBs rate phone calls their best source of leads, ahead of online forms, in-person, and email ([BIA/Kelsey](https://www.bia.com/press-releases/phone-calls-are-the-new-click-new-report-by-biakelsey-focuses-on-mobile-local-lead-attribution-for-smbs/)). A call is how you find out whether the loan will be repaid, the appointment will be kept, the ticket holder will upgrade — whether the lead is real at all.
 
-**Big organisations make the calls — at ruinous cost.** The only lever for volume is headcount: salaries, supervisors, QA, training, floor space, and attrition that resets the training bill every few months. Around the people sits a stack of per-seat subscriptions — dialer, CRM, recording, transcription, analytics — whose entire job is to reconstruct, after the fact, what the customer said. After all that spend, the "data" is a dropdown an agent clicked while the next call was ringing.
+And yet every organization is sitting on a queue of calls it knows it should be making and isn't.
 
-**Small businesses don't make the calls at all.** Nobody stands up a call centre for one campaign, and one person manages 40–60 dials a day — so 600 leads is two weeks of someone's life. The leads go cold instead. Not because the calls weren't worth making, but because the machine that makes them costs more than the answers are worth.
+**Big organizations make the calls — at ruinous cost.** The only lever for volume is headcount: salaries, supervisors, QA, training, floor space, and attrition that resets the training bill every few months. Around the people sits a stack of per-seat subscriptions — dialer, CRM, recording, transcription, analytics — whose entire job is to reconstruct, after the fact, what the customer said. After all that spend, the "data" is a dropdown an agent clicked while the next call was ringing.
+
+**Small businesses don't make the calls at all.** Nobody stands up a call center for one campaign, and one person manages 40–60 dials a day — so 600 leads is two weeks of someone's life. The leads go cold instead. Not because the calls weren't worth making, but because the machine that makes them costs more than the answers are worth.
 
 **Both fail in the same place.** The answer — the only thing anyone wanted — is treated as a by-product of the call, recovered afterwards from recordings and memory. And how many conversations you can have is capped by how many people you employ.
 
 ## ✨ Our Solution
 
-**Becca replaces the call centre with a sentence.**
+**Becca replaces the call center with a sentence.**
 
 Write what the call should do. Becca builds the agent — what to ask, how to behave, which answers it must bring back. Upload your contact spreadsheet, map the columns, press launch. The agent holds a real conversation with every contact and returns a table: one row per person, one column per question, every value traceable to the words that produced it.
 
@@ -65,12 +67,12 @@ Becca is domain-agnostic — the agent is whatever the brief says — and the tw
 
 The same goes for a hospital confirming appointments, a school chasing fees, an estate agency sorting 600 leads down to the 40 that are real.
 
-### Call centre vs. Becca
+### Call center vs. Becca
 
-| Call centre | Becca |
+| Call center | Becca |
 |---|---|
 | Hire, train, supervise; attrition resets the ramp | Describe the call; test it in minutes |
-| Fixed salaries + five per-seat tool licences | Flat per-minute rate from a prepaid wallet |
+| Fixed salaries + five per-seat tool licenses | Flat per-minute rate from a prepaid wallet |
 | More volume = more headcount | More volume = a bigger wallet balance |
 | Script drift between agents | Every call runs the same frozen agent version |
 | Outcome = a dropdown clicked between calls | One structured row per call, filterable, exportable |
@@ -81,7 +83,7 @@ The same goes for a hospital confirming appointments, a school chasing fees, an 
 1. **Brief** — describe the call in plain English.
 2. **Agent** — Becca generates the field set (inputs from your list, outputs from the conversation) and a call guide. Edits create immutable versions.
 3. **Test calls** — real billed calls with stand-in values; tune until the answers come back right.
-4. **Contacts** — upload a spreadsheet, map columns, numbers normalised to E.164 and de-duplicated; a preview reads three rows back exactly as the agent would speak them.
+4. **Contacts** — upload a spreadsheet, map columns, numbers normalized to E.164 and de-duplicated; a preview reads three rows back exactly as the agent would speak them.
 5. **Launch** — pre-flight checks, a one-time owner acknowledgement about the contacts, output schema freezes, and the agent dials each contact once, inside their local calling window and the run's spend cap. Pause, resume, or stop anytime.
 6. **Results** — one insight per output field with provenance into the transcript; human corrections stored alongside, never over. "Qualified" is whatever saved view you define.
 7. **Billing** — prepaid wallet, flat per-minute rate, append-only ledger as the source of truth.
