@@ -24,7 +24,7 @@ Describe a phone call in plain English. Becca builds a voice agent, calls everyo
 
 ## 🎯 The Problem
 
-> **How might we let any organisation — a bank with 40,000 customers to reach, or a business with 400 — hold every one of those conversations and get back structured, verifiable answers, without hiring a call floor?**
+> **How might we let any organization — whether a bank with 40,000 customers or a growing business with 4,000 — call every single lead and get back structured, qualifiable answers, without the overhead of a human call center?**
 
 Phone calls decide everything in Nigerian business: whether the loan is repaid, the appointment kept, the ticket upgraded, the lead ever real. And every organisation is sitting on a queue of calls it knows it should be making and isn't.
 
