@@ -3,7 +3,7 @@
 **Wema Hackaholics 7.0 · Team Becca · Yabatech**
 *Theme: Powering Possibilities — Digital Transformation, Future of Work, Financial Inclusion*
 
-Becca lets a business owner describe a phone call in plain English, then builds a voice agent that places that call to an imported contact list and brings back structured answers — one row of results per person called, with every extracted value linked back to the moment in the transcript that produced it.
+Becca lets a business describe a phone call in plain English, then builds a voice agent that places that call to an imported contact list and brings back structured answers — one row of results per person called, with every extracted value linked back to the moment in the transcript that produced it.
 
 ## Team Members
 
@@ -31,40 +31,81 @@ Both hostnames point at the **same deployment**; FastAPI routes on the `Host` he
 
 ## 🎯 The Problem
 
-> **How might we give any business — with no call centre, no telephony contract and no technical staff — the ability to hold hundreds of real phone conversations and get back structured, verifiable answers, paying only for the minutes it actually uses?**
+> **How might we let any organisation — a bank with 40,000 customers to reach this month, or a business with 400 — hold every one of those conversations and get back structured, verifiable answers, without hiring a floor of agents or stitching together five monthly subscriptions to find out what was said?**
 
-Nigerian businesses run on phone calls. A lender needs to know which of 800 applicants still wants the loan. A hospital needs to confirm which of tomorrow's 120 appointments will be kept. A school needs to reach 400 parents about fees. An estate agency has 600 leads from a campaign and needs to know which 40 are real.
+Nigerian businesses run on phone calls. Confirming, qualifying, reminding, collecting, verifying — the work that decides whether a loan is repaid, a seat is upgraded, an appointment is kept, or a lead was ever real happens on the phone.
 
-Today there are two ways to make those calls, and both are bad:
+A lender needs to know which of 800 applicants still wants the loan. A consultancy needs to work out which of 500 enquiries deserve a partner's time. A theatre producer needs to ask 2,000 ticket-holders whether they will upgrade tier before opening night. A hospital needs to confirm which of tomorrow's 120 appointments will be kept. A school needs to reach 400 parents about fees. An estate agency has 600 leads from a campaign and needs to know which 40 are real.
 
-1. **Stand up a call centre.** Agents, supervisors, workspace, headsets, training, scripts, attrition. Weeks to ramp, a monthly cost that does not scale down, and a minimum viable size that puts it out of reach of almost every SME in the country. Outsourcing to a BPO swaps that for a contract, a seat minimum and a monthly commitment.
-2. **Make your own staff do it.** Someone's week disappears. A person manages 40–60 dials a day, so 640 contacts is two weeks of one person's life — and by day three the question is being asked differently than it was on day one.
+Almost every institution is carrying a queue of calls it knows it should be making and isn't.
 
-Whichever you choose, the output is the same mess. Answers land in a notebook, a WhatsApp message, or a spreadsheet somebody filled in from memory at 6pm. There is nothing to filter on, no proof of what was actually said, and no way to answer *"which of these people said yes and can pay this month?"* without re-reading everything.
+### At enterprise scale, the calls get made — at ruinous cost
 
-**The deeper problem: the ability to hold 600 conversations this week is a capability only large organisations have.** It takes capital — a call centre — that a small business cannot justify for one campaign. So small businesses simply don't call. Leads go cold, appointments get missed, loans go unconfirmed, fees go unpaid. Not because the calls aren't worth making, but because the only machine that makes them costs more than the answers are worth.
+A bank can run the numbers on any given quarter. Eight thousand loan applications that stalled halfway. Forty thousand customers whose records are due a KYC refresh. A default book that needs contact every week. A dormant-account list nobody has called in a year.
 
-That is a financial-inclusion problem wearing a telephony costume: the businesses least able to afford idle leads are exactly the ones locked out of the tool that recovers them.
+The only lever for that volume is headcount, and headcount is a cost that never scales down: salaries, supervisors, QA analysts, training, floor space, headsets, and attrition that resets the training bill every few months. Adding a campaign means adding agents — or bumping something else off the queue. Outsourcing to a BPO only swaps the shape of the bill: a contract, a seat minimum and a monthly commitment.
+
+Then there is the tooling wrapped around them. A dialer. A CRM. Call recording. A transcription vendor. A speech-analytics or QA tool. A BI seat to read the result. Five or six per-seat monthly subscriptions, integrated at further expense, assembled for a single purpose: **to work out, after the fact, what the customer actually said.** And after all of it, the outcome data is still whatever an agent picked from a disposition dropdown while the next call was already ringing — inconsistent between agents, unverifiable, and thin.
+
+### At smaller scale, the calls simply never happen
+
+A business with 600 leads from a campaign cannot justify a call centre for one campaign, and putting a staff member on the phone costs a fortnight of their life at 40–60 dials a day. So the leads go cold, the appointments get missed, the fees go unpaid — not because the calls weren't worth making, but because the only machine that makes them costs more than the answers are worth.
+
+### Both ends fail in the same place
+
+Whatever the scale, the output is the same mess. Answers land in a disposition dropdown, a notebook, a WhatsApp message, or a spreadsheet somebody filled in from memory at 6pm. There is nothing to filter on, no proof of what was actually said, and no way to answer *"which of these people said yes and can pay this month?"* without re-reading everything.
+
+**The structured answer — the only part anybody actually wanted — is treated as a by-product of the call instead of its output.** Every expensive thing in the stack exists to recover it afterwards: the recording, the transcription, the QA sample, the analyst tagging outcomes. Meanwhile the one number that governs how many conversations an organisation can have is how many people it employs.
 
 ## ✨ Our Solution
 
 **Becca replaces the call centre with a sentence.**
 
-A business owner writes, in plain English, what the call should do. Becca reads that **brief** and builds a voice agent — what to ask, how to behave, and crucially which pieces of information it must bring back. They upload their contact spreadsheet, map the columns, and press launch. The agent dials every contact, holds a real conversation in real time, and returns **one row per person with one column per question** — and every extracted answer links back to the moment in the transcript where the person said it.
+Someone writes, in plain English, what the call should do. Becca reads that **brief** and builds a voice agent — what to ask, how to behave, and crucially which pieces of information it must bring back. They upload the contact spreadsheet, map the columns, and press launch. The agent dials every contact, holds a real conversation in real time, and returns **one row per person with one column per question** — and every extracted answer links back to the moment in the transcript where the person said it.
 
-No hiring. No call centre. No telephony account. No prompt engineering, no flow-chart builder, no code. And no monthly commitment: each business holds a prepaid **wallet** and pays a flat per-minute rate (default **$0.30/min**, test calls included), so a 200-contact campaign costs what 200 calls cost — and nothing at all when nobody is calling.
+No hiring. No call centre. No telephony account. No prompt engineering, no flow-chart builder, no code.
+
+And the structured answer is the product of the call, not an extraction performed on it afterwards by three other vendors. There is no dialer to license, no transcription subscription, no QA tool, no analyst tagging dispositions — the row arrives already filterable.
+
+There are no seats, either. Each account holds a prepaid **wallet** and pays a flat per-minute rate (default **$0.30/min**, test calls included), so a 200-contact campaign costs what 200 calls cost, a 20,000-contact campaign is a larger wallet balance rather than a hiring round, and a quiet month costs nothing at all.
+
+### What this means for a bank
+
+A voice agent that takes its instruction in plain English and returns a validated row is a direct fit for the highest-volume, lowest-complexity conversations an institution has — precisely the ones that consume a call centre's capacity and reward it least:
+
+- **Loan origination follow-up.** Call the applicants who stalled mid-application. Capture, per person: still interested, amount wanted, purpose, employment status, best time to call back. What comes back is a filterable table, not a pile of call notes.
+- **Repayment reminders.** Call every borrower approaching a due date, and every borrower just past one. Capture intent to pay, a promised date, and the reason for a delay — each answer carrying the sentence from the transcript that supports it, which is what matters when a promise is later disputed.
+- **KYC and customer-data refresh.** A regulatory obligation measured in tens of thousands of customers. Confirm address, employment and next-of-kin details at a per-minute cost instead of a per-agent one.
+- **Dormant account reactivation.** Call the customers who opened an account and never funded it, or who have gone quiet, and find out why — an answer almost no institution currently has at scale.
+- **Product and service outreach.** Savings products, insurance, POS terminals for merchants, agent-banking network check-ins — measuring genuine interest rather than counting dials.
+- **Post-resolution follow-up.** Call the customers whose complaints were closed last week and capture whether the problem is actually fixed.
+
+Every one of these is today either an outsourced campaign carrying a per-seat monthly cost, or a thing the institution has quietly stopped doing. On Becca each one is a brief, a spreadsheet and a wallet balance.
+
+### Beyond banking — who is already asking for it
+
+Becca is deliberately domain-agnostic. The agent is built from whatever the brief says, so the product neither knows nor cares which industry it is calling for — which is why the two people who have asked us hardest for it are not banks at all:
+
+- **A consultancy** that qualifies inbound enquiries by phone to decide which are worth a partner's time. Today that is a person on the phone all day: demanding work that does not scale, and that gets less consistent the longer the day runs. Placed instead by an agent that sounds human, the same calls come back as a table they can sort.
+- **A theatre producer** staging a concert, who wants to call ticket-holders and ask whether they would upgrade to a higher tier. That is a revenue call worth making only if each one costs cents instead of a salaried hour — which is exactly the arithmetic that keeps it from being made today.
+
+And the rest of the list holds unchanged: a hospital confirming tomorrow's appointments, a school reaching parents about fees, an estate agency sorting 600 campaign leads down to the 40 that are real.
 
 ### What this actually eliminates
 
 | The call centre way | Becca |
 |---|---|
-| Hire, train and supervise agents; weeks of ramp | Describe the call in a sentence; test it in minutes |
-| Fixed monthly cost regardless of volume | Prepaid wallet, per-minute, pay only for what you dial |
-| ~40–60 dials per agent per day | 10 conversations at once, dialling continuously |
+| Hire, train and supervise a floor of agents; weeks of ramp, and attrition resets it | Describe the call in a sentence; test it in minutes |
+| Salaries, supervisors, QA, floor space — a fixed cost that never scales down | Prepaid wallet, per minute, pay only for what you dial |
+| A dialer, a CRM, recording, transcription, analytics — five monthly per-seat licences | One system, in which the structured answer *is* the output |
+| More volume means more headcount | More volume means a larger wallet balance |
+| ~40–60 dials per agent per day, on a shift pattern | Calls placed continuously and concurrently |
 | Script drift — every agent asks it slightly differently | Every call runs the same frozen agent version |
-| Answers in notebooks, spreadsheets and memory | One structured row per call, ready to filter and export |
-| *"She said she was interested"* — unverifiable | Every value traced to the transcript that produced it |
+| The outcome is a dropdown an agent clicked between calls | One structured row per call, ready to filter and export |
+| An unverifiable "she said she was interested" | Every value traced to the transcript that produced it |
 | Change the script, retrain everyone | Edit the brief, and the next call already uses it |
+
+And the same system serves the other end of the market unchanged: a business with 600 leads and no call centre gets the identical capability at the cost of 600 calls, with no seats to license and no contract to sign. That is the financial-inclusion half of the argument — the businesses least able to afford idle leads are exactly the ones locked out of the tool that recovers them.
 
 ### How it works
 
