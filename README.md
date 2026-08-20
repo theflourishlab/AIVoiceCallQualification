@@ -1,18 +1,72 @@
 # Becca — AI Voice Call Qualification
 
+**Wema Hackaholics 7.0 · Team Becca · Yabatech**
+*Theme: Powering Possibilities — Digital Transformation, Future of Work, Financial Inclusion*
+
 Becca lets a business owner describe a phone call in plain English, then builds a voice agent that places that call to an imported contact list and brings back structured answers — one row of results per person called, with every extracted value linked back to the moment in the transcript that produced it.
 
+## Team Members
 
-## Live deployment
+- **Flourish Olukotun**
+- **Folaranmi Olaniyi**
+
+---
+
+## 🚀 Live Demo
+
+* **Live Application:** **[https://app.becca.live](https://app.becca.live)** — the client app, where a business builds agents, imports contacts, runs test calls, launches, and reads results.
+* **Backend API:** Not a separate service. Becca is server-rendered, so the application above *is* the backend — one FastAPI deployment answering on two hostnames. The agency-facing plane is **[https://console.becca.live](https://console.becca.live)** (Becca staff only), and the Telnyx webhook endpoint answers at `/webhooks/telnyx` on either hostname.
+* **Recorded Demo:** *[Loom link — to be added]*
+
+> **Access:** sign-in is Google OAuth and there is no self sign-up — a user exists only if staff added their email, which is the tenant boundary working as designed. For judging, we will provision an account on request, and the recorded demo walks the full flow end to end.
 
 | Plane | URL | Who uses it |
 |---|---|---|
 | **Client app** | [https://app.becca.live](https://app.becca.live) | Client businesses — build agents, import contacts, run test calls, launch, read results, see what they owe |
 | **Becca console** | [https://console.becca.live](https://console.becca.live) | Becca staff only — every client account, wallets and top-ups, per-minute rates, the margin monitor, number inventory, channel allocation |
 
-Both hostnames point at the **same deployment**; FastAPI routes on the `Host` header to one of two separate applications that share a database. Sign-in is Google OAuth; there is no sign-up — a user exists only if staff added their email.
+Both hostnames point at the **same deployment**; FastAPI routes on the `Host` header to one of two separate applications that share a database.
 
-## How it works
+---
+
+## 🎯 The Problem
+
+> **How might we give any business — with no call centre, no telephony contract and no technical staff — the ability to hold hundreds of real phone conversations and get back structured, verifiable answers, paying only for the minutes it actually uses?**
+
+Nigerian businesses run on phone calls. A lender needs to know which of 800 applicants still wants the loan. A hospital needs to confirm which of tomorrow's 120 appointments will be kept. A school needs to reach 400 parents about fees. An estate agency has 600 leads from a campaign and needs to know which 40 are real.
+
+Today there are two ways to make those calls, and both are bad:
+
+1. **Stand up a call centre.** Agents, supervisors, workspace, headsets, training, scripts, attrition. Weeks to ramp, a monthly cost that does not scale down, and a minimum viable size that puts it out of reach of almost every SME in the country. Outsourcing to a BPO swaps that for a contract, a seat minimum and a monthly commitment.
+2. **Make your own staff do it.** Someone's week disappears. A person manages 40–60 dials a day, so 640 contacts is two weeks of one person's life — and by day three the question is being asked differently than it was on day one.
+
+Whichever you choose, the output is the same mess. Answers land in a notebook, a WhatsApp message, or a spreadsheet somebody filled in from memory at 6pm. There is nothing to filter on, no proof of what was actually said, and no way to answer *"which of these people said yes and can pay this month?"* without re-reading everything.
+
+**The deeper problem: the ability to hold 600 conversations this week is a capability only large organisations have.** It takes capital — a call centre — that a small business cannot justify for one campaign. So small businesses simply don't call. Leads go cold, appointments get missed, loans go unconfirmed, fees go unpaid. Not because the calls aren't worth making, but because the only machine that makes them costs more than the answers are worth.
+
+That is a financial-inclusion problem wearing a telephony costume: the businesses least able to afford idle leads are exactly the ones locked out of the tool that recovers them.
+
+## ✨ Our Solution
+
+**Becca replaces the call centre with a sentence.**
+
+A business owner writes, in plain English, what the call should do. Becca reads that **brief** and builds a voice agent — what to ask, how to behave, and crucially which pieces of information it must bring back. They upload their contact spreadsheet, map the columns, and press launch. The agent dials every contact, holds a real conversation in real time, and returns **one row per person with one column per question** — and every extracted answer links back to the moment in the transcript where the person said it.
+
+No hiring. No call centre. No telephony account. No prompt engineering, no flow-chart builder, no code. And no monthly commitment: each business holds a prepaid **wallet** and pays a flat per-minute rate (default **$0.30/min**, test calls included), so a 200-contact campaign costs what 200 calls cost — and nothing at all when nobody is calling.
+
+### What this actually eliminates
+
+| The call centre way | Becca |
+|---|---|
+| Hire, train and supervise agents; weeks of ramp | Describe the call in a sentence; test it in minutes |
+| Fixed monthly cost regardless of volume | Prepaid wallet, per-minute, pay only for what you dial |
+| ~40–60 dials per agent per day | 10 conversations at once, dialling continuously |
+| Script drift — every agent asks it slightly differently | Every call runs the same frozen agent version |
+| Answers in notebooks, spreadsheets and memory | One structured row per call, ready to filter and export |
+| *"She said she was interested"* — unverifiable | Every value traced to the transcript that produced it |
+| Change the script, retrain everyone | Edit the brief, and the next call already uses it |
+
+### How it works
 
 1. **Brief.** A client writes what they want the call to do, in plain English.
 2. **Agent.** Becca generates an agent from the brief: an ordered **field set** (input fields supplied by the contact list, output fields extracted from the conversation) and a **call guide** — behavioural direction for the call, not verbatim lines. Every edit produces a new immutable agent version.
@@ -24,20 +78,93 @@ Both hostnames point at the **same deployment**; FastAPI routes on the `Host` he
 
 Two roles exist on the client side — **owner** and **member** — and the only permission separating them is launching, because launching is the only action that dials real contacts at scale. Becca staff can *enter* a client account to act on its behalf; that is always visibly signalled and attributed to the staff member.
 
-`CONTEXT.md` is the glossary for all of this vocabulary and is worth reading first.
+### Built to be trusted with real money and real phone calls
 
-## Stack
+This is the part a demo doesn't show, and the part that decides whether a system like this can carry a real client:
 
-- **Python 3.14 · FastAPI · Jinja2 · HTMX** (Alpine on two screens) — server-rendered; two Python processes and a Postgres.
-- **PostgreSQL** — data, job queue (`FOR UPDATE SKIP LOCKED`), pub/sub for the live monitor, and **row-level security** as the tenant boundary from migration one.
-- **SQLAlchemy 2.0 async + asyncpg**, Alembic migrations.
-- **Telnyx** for telephony (AI assistants, calls, webhooks verified with Ed25519); **Anthropic** for agent generation via structured tool-use output.
-- **Authlib** (Google OAuth, server-side), signed-cookie sessions, explicit CSRF middleware, Sentry with scrubbing.
-- Hosted on **Render (Frankfurt)**; CI on GitHub Actions.
+- **Tenant isolation is structural, not disciplined.** Every tenant-scoped table carries `client_account_id` under Postgres **row-level security**, enabled from migration one. A forgotten `WHERE` clause cannot leak one business's contacts into another's screen.
+- **Money is an append-only ledger, never a mutable balance.** Every top-up, call debit and correction is a new line; the balance is a cache of the ledger, and an in-flight call holds its worst-case cost against the wallet so a run can never overspend into the negative.
+- **A call is never dialled twice.** Idempotency keys guard both the dispatch queue and Telnyx's webhook redeliveries, so a crash mid-dial or a duplicate callback cannot double-call a person or double-charge a client.
+- **Non-production environments cannot dial strangers.** There is a single Telnyx account, so the guardrail lives in the gateway itself: outside production, any number not on an explicit allowlist is refused. Config alone was not trusted with this.
+- **People are called at humane hours, with permission.** Calling windows are evaluated in the *contact's* local time, and no client can launch until an owner has acknowledged that the people on their list expect contact from their business.
+- **Generation quality is measured, not assumed.** An eval harness (`becca/evals/`) scores generated agents against a rubric, with versioned baselines in `docs/evals/` — so a model or prompt change produces a scorecard, not a hunch.
 
-Every stack decision is numbered `SD-nn` in `docs/techstack.md`; every functional requirement is `FR-*` in `docs/beccavoicefrd.md`.
+---
 
-## Repository layout
+## 🛠️ Tech Stack
+
+* **Frontend:** Server-rendered **Jinja2 + HTMX**, with Alpine.js on the two screens that need real client-side state (the output-field editor and the column mapper). A hand-written design system, no CSS framework.
+* **Backend:** **Python 3.14 + FastAPI**, running as two processes — a web app and a dispatcher worker (`python -m becca.worker`). Server-side **Authlib** Google OAuth, signed-cookie sessions, explicit CSRF middleware.
+* **Database:** **PostgreSQL**, doing four jobs: relational data, the job queue (`SELECT … FOR UPDATE SKIP LOCKED`), pub/sub for the live call monitor (`LISTEN/NOTIFY` over SSE), and **row-level security** as the tenant boundary. Accessed with **SQLAlchemy 2.0 async + asyncpg**; migrations with **Alembic**.
+* **Deployment:** **Render (Frankfurt)** — one web service serving both hostnames via `Host`-header routing, plus a worker and managed Postgres. CI on **GitHub Actions**.
+* **AI/APIs:** **Anthropic (Claude)** for agent generation, using structured tool-use output so a brief becomes one validated object rather than parsed prose. **Telnyx** for telephony — AI assistants, outbound calls, and webhooks verified with Ed25519 signatures. Plus `phonenumbers` (E.164 normalisation), `openpyxl`/`csv` (spreadsheets), `tenacity` (retries), and Sentry (observability, with scrubbing configured before the first event).
+
+Every stack decision is numbered `SD-nn` in `docs/techstack.md`, with the alternative we rejected and why; every functional requirement is `FR-*` in `docs/beccavoicefrd.md`.
+
+---
+
+## ⚙️ How to Set Up and Run Locally
+
+**Requirements:** Python 3.14, [uv](https://docs.astral.sh/uv/), Docker.
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Wema-Hackaholics-Hackathon/wema-hackaholics7-0-hackathon-yabatech-project-team-becca.git
+   cd wema-hackaholics7-0-hackathon-yabatech-project-team-becca
+   ```
+
+2. **Start Postgres** on port 5433 — this also creates the non-superuser `becca_app` role that row-level security depends on:
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   uv sync --all-groups
+   ```
+
+4. **Create your `.env`** — the defaults never touch Telnyx and never place a call:
+   ```bash
+   cp .env.example .env
+   ```
+   ```
+   TELNYX_MODE=fake          # "real" only deliberately, with a human at the keyboard
+   DATABASE_URL=postgresql+asyncpg://becca_app:becca@localhost:5433/becca
+   ANTHROPIC_API_KEY=        # optional locally; a fake generator runs without it
+   DIAL_ALLOWLIST=           # E.164 numbers this environment may dial. Empty = nobody
+   ```
+
+5. **Run the migrations:**
+   ```bash
+   uv run alembic upgrade head
+   ```
+
+6. **Start the web app** (both planes) — `app.localtest.me` and `console.localtest.me` both resolve to 127.0.0.1:
+   ```bash
+   uv run uvicorn becca.web.app:create_app --factory --reload
+   ```
+
+7. **Start the worker** in a second terminal — nothing dials without it:
+   ```bash
+   uv run python -m becca.worker
+   ```
+
+> **Safety:** `TELNYX_MODE` defaults to `fake`, so nothing dials. Even in `real` mode, any environment other than production refuses to dial a number that is not on `DIAL_ALLOWLIST` — the guardrail lives in the gateway, not in config someone can forget. See `becca/config.py` for every setting.
+
+### Running the checks
+
+The same gate CI runs:
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy
+uv run pytest
+```
+
+---
+
+## 📁 Repository Layout
 
 ```
 becca/
@@ -56,44 +183,11 @@ tests/
 CONTEXT.md        ubiquitous language / glossary
 ```
 
-## Running locally
+`CONTEXT.md` is the glossary for the vocabulary used throughout this project — *brief*, *agent*, *field set*, *call guide*, *run*, *wallet*, *insight result* — and is worth reading first.
 
-Requirements: Python 3.14, [uv](https://docs.astral.sh/uv/), Docker.
+---
 
-```bash
-# 1. Postgres on :5433 — creates the non-superuser becca_app role (RLS depends on it)
-docker compose up -d
-
-# 2. Dependencies
-uv sync --all-groups
-
-# 3. Config — the defaults never touch Telnyx
-cp .env.example .env
-
-# 4. Migrate
-uv run alembic upgrade head
-
-# 5. Web (both planes) — app.localtest.me / console.localtest.me resolve to 127.0.0.1
-uv run uvicorn becca.web.app:create_app --factory --reload
-
-# 6. Worker, in a second terminal
-uv run python -m becca.worker
-```
-
-`TELNYX_MODE` defaults to `fake`, so nothing dials. Outside production, even `real` mode refuses any number not on `DIAL_ALLOWLIST` (comma-separated E.164) — there is a single Telnyx account, so this guardrail lives in the gateway, not in config that can be forgotten. See `becca/config.py` for every setting.
-
-## Checks
-
-The same gate CI runs:
-
-```bash
-uv run ruff check .
-uv run ruff format --check .
-uv run mypy
-uv run pytest
-```
-
-## Contributing
+## 🤝 Contributing
 
 `main` is protected by convention: nobody commits to it directly. All work lands through a pull request that CI has passed and a maintainer has reviewed.
 
@@ -167,7 +261,9 @@ Review is by at least one maintainer. Respond to comments with new commits rathe
 - Does the UI copy use the glossary's words?
 - Is there a test that would fail if this broke?
 
-## Working on the project
+---
+
+## 📚 Working on the project
 
 - **Read before changing behaviour:** `CONTEXT.md`, `docs/beccavoicefrd.md`, `docs/techstack.md`, and `docs/open-conflicts.md` (known contradictions between the documents). `docs/agents/domain.md` explains how to use them.
 - **Secrets** never go in `.env.example`. `.env` and `.env.staging` are gitignored and must stay so.
