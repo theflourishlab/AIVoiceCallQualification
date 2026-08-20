@@ -3,7 +3,7 @@
 **Wema Hackaholics 7.0 · Team Becca · Yabatech**
 *Powering Possibilities — Digital Transformation · Future of Work · Financial Inclusion*
 
-Describe a phone call in plain English. Becca builds a voice agent, calls everyone on your list, and returns **one row of structured answers per person** — every answer linked to the exact moment in the transcript that proves it.
+Describe the conversation you want to have. Becca generates the agent, calls your contact list, and returns **structured, qualifiable data — where every single answer is backed by exact transcript evidence**.
 
 ## Team Members
 
