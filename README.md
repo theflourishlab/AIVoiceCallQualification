@@ -137,6 +137,7 @@ Every stack decision is numbered `SD-nn` in `docs/techstack.md` with the alterna
    ```
    ```
    TELNYX_MODE=fake          # "real" only deliberately, with a human at the keyboard
+   BECCA_STAFF_EMAILS=you@gmail.com   # who may sign in as staff; seeded on first sign-in. Empty = nobody can sign in
    DATABASE_URL=postgresql+asyncpg://becca_app:becca@localhost:5433/becca
    ANTHROPIC_API_KEY=        # optional locally; a fake generator runs without it
    DIAL_ALLOWLIST=           # E.164 numbers this environment may dial. Empty = nobody
@@ -158,6 +159,17 @@ Every stack decision is numbered `SD-nn` in `docs/techstack.md` with the alterna
    ```
 
 > **Safety:** `TELNYX_MODE` defaults to `fake`, so nothing dials. Even in `real` mode, non-production refuses any number not on `DIAL_ALLOWLIST` — the guardrail lives in the gateway, not in config someone can forget.
+
+### Signing in for the first time
+
+There is no sign-up. An email can sign in only if Becca already knows it — and the first email Becca knows is the one you put in `BECCA_STAFF_EMAILS`.
+
+1. **Seed yourself as staff** — `BECCA_STAFF_EMAILS=you@gmail.com` in `.env`. The staff row is created the first time that email signs in; there is nothing else to run.
+2. **Sign in on the console** — open `http://console.localtest.me:8000/auth/login`. Locally, with no Google credentials configured, this shows a plain dev form: type the email from step 1 and you land on the console. (`/auth/dev?email=you@gmail.com` does the same in one hop. The form and the route exist only when `ENVIRONMENT=dev` and `GOOGLE_CLIENT_ID` is empty; production answers 404 to both.)
+3. **Create a client from the console** — *Clients → New client* creates the client account and its first owner's email. Add more people under the client's *People*; add more staff under *Staff*; or *Enter* the client account to work inside it yourself.
+4. **Sign in as that client** — `http://app.localtest.me:8000/auth/login` with the owner's email. Staff land on the console host; client users land on the app host.
+
+On staging and production, `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are set, so `/auth/login` runs real Google OAuth and the dev form does not exist — but the rule is identical: the email is on the staff list, in the staff table, or on a client user row, or it gets `/auth/refused`. If Google itself returns `access_denied`, the OAuth app is still in Testing mode and that person is not a listed test user.
 
 **Checks** (the same gate CI runs):
 
