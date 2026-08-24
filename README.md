@@ -14,11 +14,11 @@ Describe the conversation you want to have. Becca generates the agent, calls you
 
 ## 🚀 Live Demo
 
-* **Live Application:** **[https://app.becca.live](https://app.becca.live)** — where a business builds agents, imports contacts, tests, launches, and reads results.
-* **Backend API:** Not separate — Becca is server-rendered, so the app above *is* the backend. One FastAPI deployment serves two hostnames: the client app, and the operator console at **[https://console.becca.live](https://console.becca.live)** (wallets, rates, margin, number inventory). Telnyx webhooks land at `/webhooks/telnyx`.
+* **Try it from your phone:** **[https://wema-hackaholics7-0-hackathon-yabatech-g9g3.onrender.com/auth/demo?code=5c5eeaa705c0fa49](https://wema-hackaholics7-0-hackathon-yabatech-g9g3.onrender.com/auth/demo?code=5c5eeaa705c0fa49)** — this link *is* the sign-in. It drops you into a shared demo account with three ready-built agents: open one, hit **Test**, enter your own number, and Becca calls you. Describe your own agent if you like. Launch is visible but blocked by pre-flight — that's the safety gate doing its job, not a bug.
+* **Live Application:** **[https://wema-hackaholics7-0-hackathon-yabatech-g9g3.onrender.com](https://wema-hackaholics7-0-hackathon-yabatech-g9g3.onrender.com)** — where a business builds agents, imports contacts, tests, launches, and reads results. Server-rendered, so this *is* the backend too; Telnyx webhooks land at `/webhooks/telnyx`.
 * **Recorded Demo:** *[Loom link — to be added]*
 
-> **Access:** sign-in is Google OAuth with no self sign-up — a user exists only if staff added their email. That's the tenant boundary working as designed; we'll provision judge accounts on request.
+> **Access:** production sign-in is Google OAuth with no self sign-up — a user exists only if staff added their email. The demo link above is a deliberate, single-account door for judges and visitors; it can be rotated in one env change, and the demo wallet caps what it can spend.
 
 ---
 
@@ -104,7 +104,7 @@ The same goes for a hospital confirming appointments, a school chasing fees, an 
 * **Frontend:** Server-rendered Jinja2 + HTMX; Alpine.js on the two screens needing client-side state. Hand-written design system, no framework.
 * **Backend:** Python 3.14 + FastAPI — a web app and a dispatcher worker. Authlib Google OAuth, signed-cookie sessions, CSRF middleware.
 * **Database:** PostgreSQL doing four jobs: data, job queue (`FOR UPDATE SKIP LOCKED`), pub/sub for the live monitor, and row-level security as the tenant boundary. SQLAlchemy 2.0 async + asyncpg; Alembic migrations.
-* **Deployment:** Render (Frankfurt) — one service, two hostnames via `Host`-header routing. CI on GitHub Actions.
+* **Deployment:** Render — two web services from one codebase (client app + operator console, split by `Host`-header routing) sharing one Postgres; the dispatcher runs in-process on the app service (`INLINE_WORKER`). Free tier for the hackathon, reproducible with `scripts/demo-wizard.sh`. CI on GitHub Actions.
 * **AI/APIs:** Anthropic (Claude) for agent generation via structured tool-use output; Telnyx for telephony with Ed25519-verified webhooks; `phonenumbers`, `openpyxl`, `tenacity`, Sentry.
 
 Every stack decision is numbered `SD-nn` in `docs/techstack.md` with the alternative we rejected; every requirement is `FR-*` in `docs/beccavoicefrd.md`.
@@ -193,7 +193,7 @@ becca/
   db/             engine, sessions, RLS plumbing, models
 alembic/          migrations
 docs/             FRD, stack decisions, ADRs, product prototype, eval baselines, agent docs
-scripts/          pg-init.sql (app role), staging wizard, spike script
+scripts/          pg-init.sql (app role), demo-wizard.sh + seed_demo.py (hackathon deploy), staging wizard, spike script
 tests/
 CONTEXT.md        ubiquitous language / glossary — read this first
 ```
@@ -218,4 +218,4 @@ Nobody commits to `main` directly. Work lands through a reviewed pull request wi
 ## 📚 Working on the project
 
 - **Read before changing behaviour:** `CONTEXT.md`, `docs/beccavoicefrd.md`, `docs/techstack.md`, and `docs/open-conflicts.md` (known contradictions between the documents). `docs/agents/domain.md` explains how to use them.
-- **Secrets** never go in `.env.example`. `.env` and `.env.staging` are gitignored and must stay so.
+- **Secrets** never go in `.env.example`. `.env`, `.env.staging` and `.env.demo` are gitignored and must stay so.
