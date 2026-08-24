@@ -25,6 +25,11 @@ def app(monkeypatch: pytest.MonkeyPatch) -> Starlette:
     monkeypatch.setenv("GOOGLE_CLIENT_ID", "")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")  # FakeGenerator
     monkeypatch.setenv("BECCA_STAFF_EMAILS", STAFF_EMAIL)
+    # A developer .env carrying demo credentials must not grow routes
+    # (or an inline worker) under unrelated tests.
+    monkeypatch.setenv("DEMO_ACCESS_CODE", "")
+    monkeypatch.setenv("DEMO_USER_EMAIL", "")
+    monkeypatch.setenv("INLINE_WORKER", "false")
     return app_module.create_app()
 
 

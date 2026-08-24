@@ -8,8 +8,15 @@ There is no sign-up, no invitation, no pending state.
 In dev with no Google credentials configured, /auth/dev?email= runs the
 same membership resolution without the OAuth dance. It refuses to exist
 outside dev.
+
+With DEMO_ACCESS_CODE configured, the client plane also serves
+/auth/demo?code= — a QR-code door into the one pre-seeded demo user.
+It skips membership resolution entirely: the only row it can ever sign
+in is the app_user named by DEMO_USER_EMAIL, so no code a visitor
+supplies reaches staff.
 """
 
+import secrets
 from dataclasses import dataclass
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
@@ -68,7 +75,7 @@ def _session_for(membership: Membership) -> SessionData:
     )
 
 
-def build_router(settings: Settings) -> APIRouter:
+def build_router(settings: Settings, plane: str) -> APIRouter:
     router = APIRouter(prefix="/auth")
     oauth = OAuth()  # type: ignore[no-untyped-call]
     if settings.google_client_id:
@@ -80,9 +87,23 @@ def build_router(settings: Settings) -> APIRouter:
             client_kwargs={"scope": "openid email"},
         )
 
+    def _land(request: Request, membership: Membership) -> Response:
+        # Land each kind on its own plane, whichever host the OAuth round
+        # trip used: staff on the console, client users on the client
+        # plane. The session cookie spans both hosts (COOKIE_DOMAIN), so
+        # the cross-host redirect stays signed in. Before this, the
+        # relative "/" left a client user whose flow ended console-side
+        # staring at FR-ARCH-3's bare 403 with a valid session.
+        store: SessionStore = request.app.state.sessions
+        scheme = "http" if settings.environment == "dev" else "https"
+        port = f":{request.url.port}" if request.url.port else ""
+        host = settings.console_host if membership.kind == "staff" else settings.client_host
+        response = RedirectResponse(f"{scheme}://{host}{port}/", status_code=303)
+        store.write(response, _session_for(membership))
+        return response
+
     async def _sign_in(request: Request, email: str) -> Response:
         factory: SessionFactory = request.app.state.db
-        store: SessionStore = request.app.state.sessions
         membership = await resolve_membership(factory, settings, email)
         if membership is None:
             # FR-AUTH-1: refusal, directing them to their Becca contact.
@@ -91,18 +112,7 @@ def build_router(settings: Settings) -> APIRouter:
             # mismatch with what the console has on file.
             print(f"auth refused: no membership for {email.strip().lower()!r}", flush=True)
             return RedirectResponse("/auth/refused", status_code=303)
-        # Land each kind on its own plane, whichever host the OAuth round
-        # trip used: staff on the console, client users on the client
-        # plane. The session cookie spans both hosts (COOKIE_DOMAIN), so
-        # the cross-host redirect stays signed in. Before this, the
-        # relative "/" left a client user whose flow ended console-side
-        # staring at FR-ARCH-3's bare 403 with a valid session.
-        scheme = "http" if settings.environment == "dev" else "https"
-        port = f":{request.url.port}" if request.url.port else ""
-        host = settings.console_host if membership.kind == "staff" else settings.client_host
-        response = RedirectResponse(f"{scheme}://{host}{port}/", status_code=303)
-        store.write(response, _session_for(membership))
-        return response
+        return _land(request, membership)
 
     @router.get("/login")
     async def login(request: Request) -> Response:
@@ -134,6 +144,34 @@ def build_router(settings: Settings) -> APIRouter:
             print("auth refused: token carried no email", flush=True)
             return RedirectResponse("/auth/refused", status_code=303)
         return await _sign_in(request, email)
+
+    if plane == "client" and settings.demo_access_code and settings.demo_user_email:
+
+        @router.get("/demo")
+        async def demo_login(request: Request, code: str = "") -> Response:
+            # The QR-code door. Client plane only: landing is same-host,
+            # so the cookie needs no COOKIE_DOMAIN (onrender.com is on
+            # the Public Suffix List and cannot carry a spanning cookie).
+            if not secrets.compare_digest(code, settings.demo_access_code):
+                print("auth refused: bad demo access code", flush=True)
+                return RedirectResponse("/auth/refused", status_code=303)
+            factory: SessionFactory = request.app.state.db
+            email = settings.demo_user_email.strip().lower()
+            async with factory.console_session() as s:
+                user = (
+                    await s.execute(
+                        text("SELECT id FROM app_user WHERE google_email = :e"), {"e": email}
+                    )
+                ).scalar_one_or_none()
+                if user is not None:
+                    await s.execute(
+                        text("UPDATE app_user SET last_seen_at = now() WHERE id = :id"),
+                        {"id": str(user)},
+                    )
+            if user is None:
+                print(f"auth refused: demo user {email!r} not seeded", flush=True)
+                return RedirectResponse("/auth/refused", status_code=303)
+            return _land(request, Membership(user_id=str(user), kind="user"))
 
     if settings.environment == "dev" and not settings.google_client_id:
 

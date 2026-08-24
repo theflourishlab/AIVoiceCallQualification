@@ -7,7 +7,10 @@ with no session and no CSRF. In dev, any unmatched host (localhost)
 falls through to the client app.
 """
 
+import asyncio
 import re
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -43,6 +46,7 @@ from becca.web.console_plane import notifications as console_notifications
 from becca.web.console_plane import numbers as console_numbers
 from becca.web.console_plane import staff as console_staff
 from becca.web.sessions import SessionStore
+from becca.worker.loop import run_forever
 
 _HERE = Path(__file__).parent
 
@@ -111,7 +115,7 @@ def _plane_app(
     # Authlib stores the OAuth state parameter in Starlette's session.
     app.add_middleware(SessionMiddleware, secret_key=settings.session_secret)
     app.mount("/static", StaticFiles(directory=_HERE / "static"), name="static")
-    app.include_router(auth.build_router(settings))
+    app.include_router(auth.build_router(settings, plane))
     if plane == "console":
         app.include_router(console_clients.router)
         app.include_router(console_numbers.router)
@@ -148,6 +152,22 @@ def create_app() -> Starlette:
     console_app = _plane_app("console", settings, db, store, templates, generator, telnyx)
     client_app = _plane_app("client", settings, db, store, templates, generator, telnyx)
 
+    # Lifespan on the ROOT app only — Host/Mount never run the mounted
+    # sub-apps' lifespans. INLINE_WORKER runs the whole worker loop in
+    # this process, for deployments without a worker service (Render
+    # free tier). One uvicorn worker only: N processes would run N loops.
+    @asynccontextmanager
+    async def lifespan(_: Starlette) -> AsyncIterator[None]:
+        task = None
+        if settings.inline_worker:
+            print("becca inline worker: starting in-process loop", flush=True)
+            task = asyncio.create_task(run_forever(db, telnyx, settings))
+        yield
+        if task is not None:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
     return Starlette(
         routes=[
             Mount("/webhooks", app=webhook_app),
@@ -155,5 +175,6 @@ def create_app() -> Starlette:
             Host(settings.client_host, app=client_app),
             # Dev fallback: plain localhost reaches the client plane.
             Mount("/", app=client_app),
-        ]
+        ],
+        lifespan=lifespan,
     )

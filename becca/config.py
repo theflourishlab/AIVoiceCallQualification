@@ -47,6 +47,20 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     sentry_dsn: str = ""
 
+    # Hackathon demo sign-in (client plane only). A non-empty access
+    # code registers GET /auth/demo?code=..., which signs visitors into
+    # the single app_user named by DEMO_USER_EMAIL — no Google round
+    # trip, no path to staff. Empty (the default) means the route does
+    # not exist. The email needn't be a real mailbox; it only has to
+    # match a pre-seeded app_user row (scripts/seed_demo.py).
+    demo_access_code: str = ""
+    demo_user_email: str = ""
+
+    # Runs the worker loop inside the web process (Render free tier has
+    # no background-worker service type). Enable on exactly ONE
+    # single-worker uvicorn instance; N processes would run N loops.
+    inline_worker: bool = False
+
     # What every assistant runs on, applied at create AND re-asserted on
     # every scratch sync — so an env change propagates to existing
     # scratch assistants on the next test call. Deployment-wide until
@@ -105,6 +119,8 @@ class Settings(BaseSettings):
             raise ValueError("TELNYX_MODE=real requires TELNYX_API_KEY")
         if self.environment == "production" and self.session_secret == "dev-only-secret":  # noqa: S105
             raise ValueError("production requires a real SESSION_SECRET")
+        if self.demo_access_code and not self.demo_user_email:
+            raise ValueError("DEMO_ACCESS_CODE requires DEMO_USER_EMAIL")
         return self
 
     def staff_emails(self) -> frozenset[str]:

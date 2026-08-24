@@ -63,13 +63,16 @@ async def telnyx_webhook(request: Request) -> Response:
         else:
             body = raw.decode(errors="replace")
 
-    record = {
-        "received_at": time.time(),
-        "content_type": content_type,
-        "signature_verdict": verdict,
-        "body": body,
-    }
-    await asyncio.to_thread(_append, EVENTS_FILE, json.dumps(record) + "\n")
+    # The raw log is a dev/staging observability trail; in production it
+    # would grow without bound on (ephemeral) disk, relative to CWD.
+    if settings.environment != "production":
+        record = {
+            "received_at": time.time(),
+            "content_type": content_type,
+            "signature_verdict": verdict,
+            "body": body,
+        }
+        await asyncio.to_thread(_append, EVENTS_FILE, json.dumps(record) + "\n")
 
     # Lifecycle ingest (Phase 4). A configured public key makes
     # verification mandatory; without one (dev, tests) events are
