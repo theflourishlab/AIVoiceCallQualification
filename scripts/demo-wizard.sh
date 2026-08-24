@@ -348,6 +348,26 @@ note "the free tier has no worker service type. Console must NOT set it."
 step "Create the service."
 pause "Press Enter once the first deploy is building..."
 note "First build takes a few minutes (Python 3.14 + uv sync)."
+say ""
+warn "Render may have RENAMED the service (it uses the repo name, or adds a"
+warn "suffix when a name is taken). The hostname is load-bearing: the demo"
+warn "sign-in redirects to CLIENT_HOST and Telnyx calls back PUBLIC_WEBHOOK_BASE."
+step "Copy the service URL shown at the top of its Render page."
+ask APP_URL_ACTUAL "Paste the app service URL (https://....onrender.com):"
+APP_HOST_ACTUAL="${APP_URL_ACTUAL#https://}"; APP_HOST_ACTUAL="${APP_HOST_ACTUAL#http://}"; APP_HOST_ACTUAL="${APP_HOST_ACTUAL%%/*}"
+if [[ -n "$APP_HOST_ACTUAL" && "$APP_HOST_ACTUAL" != "${APP_SERVICE}.onrender.com" ]]; then
+  APP_SERVICE="${APP_HOST_ACTUAL%.onrender.com}"
+  write_env APP_SERVICE "$APP_SERVICE"
+  write_env CLIENT_HOST "$APP_HOST_ACTUAL"
+  write_env PUBLIC_WEBHOOK_BASE "https://${APP_HOST_ACTUAL}"
+  warn "Hostname differed. In Render, on THIS service's Environment, set:"
+  say  "    CLIENT_HOST=${APP_HOST_ACTUAL}          (bare hostname — no https://, no slash)"
+  say  "    PUBLIC_WEBHOOK_BASE=https://${APP_HOST_ACTUAL}"
+  say  "(the console service, next, must get the same two values)"
+  pause "Press Enter once saved (it auto-redeploys)..."
+else
+  say "hostname matches — nothing to change."
+fi
 
 # ── Stage 8 ────────────────────────────────────────────────────────────────
 stage "Render — the CONSOLE web service"
@@ -365,6 +385,20 @@ note "This service is allowed to sleep (staff-only; ~60s cold start when you"
 note "open it). Only the app service gets a keep-warm pinger — two always-on"
 note "free services would blow the workspace's shared 750 h/month."
 pause "Press Enter once the console deploy is building..."
+step "Copy the console service URL shown at the top of its Render page."
+ask CONSOLE_URL_ACTUAL "Paste the console service URL (https://....onrender.com):"
+CONSOLE_HOST_ACTUAL="${CONSOLE_URL_ACTUAL#https://}"; CONSOLE_HOST_ACTUAL="${CONSOLE_HOST_ACTUAL#http://}"; CONSOLE_HOST_ACTUAL="${CONSOLE_HOST_ACTUAL%%/*}"
+if [[ -n "$CONSOLE_HOST_ACTUAL" && "$CONSOLE_HOST_ACTUAL" != "${CONSOLE_SERVICE}.onrender.com" ]]; then
+  CONSOLE_SERVICE="${CONSOLE_HOST_ACTUAL%.onrender.com}"
+  write_env CONSOLE_SERVICE "$CONSOLE_SERVICE"
+  write_env CONSOLE_HOST "$CONSOLE_HOST_ACTUAL"
+  warn "Hostname differed. On BOTH services' Environment in Render, set:"
+  say  "    CONSOLE_HOST=${CONSOLE_HOST_ACTUAL}       (bare hostname)"
+  pause "Press Enter once saved on both..."
+fi
+warn "If the APP hostname changed in the previous stage, set the same two"
+warn "values (CLIENT_HOST, PUBLIC_WEBHOOK_BASE) on THIS service's env too."
+pause "Press Enter to continue..."
 
 # ── Stage 9 ────────────────────────────────────────────────────────────────
 stage "Seed the demo account"
