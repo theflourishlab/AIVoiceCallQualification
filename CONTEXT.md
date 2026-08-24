@@ -86,7 +86,7 @@ The single dialling lifecycle of an agent. A lifecycle, not an entity — there 
 _Avoid_: campaign, batch, job, execution
 
 **Test call**:
-A real, billed call placed while building an agent, using stand-in values the user types, and excluded from run results. Billed like any call: per minute, from the wallet, with a hold while dialling. Testing is a loop rather than a checkpoint: the output fields are edited between calls until the answers come back right.
+A real, billed call placed while building an agent, using stand-in values the user types, and excluded from run results. Billed like any call: per second at the client's rate, from the wallet; placed while the balance is at or above the wallet floor ($1 by default — the balance is the gate, not a hold). Testing is a loop rather than a checkpoint: the output fields are edited between calls until the answers come back right.
 _Avoid_: dry run, simulation, preview, sandbox call
 
 **Contact list**:
@@ -195,7 +195,7 @@ Staff crediting a wallet after a client's bank transfer, with the transfer refer
 _Avoid_: deposit, payment, recharge
 
 **Rate**:
-The flat per-minute price a client pays for every call, test calls included, rounded up to the next started minute. Set per client, shown plainly on the client plane, snapshotted onto each call when it dials.
+The flat per-minute price a client pays for every call, test calls included, charged per second (rate × seconds ÷ 60, to the cent — since 24 Aug 2026; previously rounded up to the next started minute). Set per client, shown plainly on the client plane, snapshotted onto each call when it dials.
 _Avoid_: tariff, price plan, margin (that word means something else)
 
 **Hold**:

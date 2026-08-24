@@ -13,6 +13,7 @@ hangup, so the screen polls while a test is dialling.
 import json
 import uuid
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import text
@@ -156,19 +157,19 @@ async def reserve_test_run(
     content: AgentVersionContent,
     to_number: str,
     stand_ins: dict[str, str],
-    max_call_minutes: int,
+    wallet_floor_usd: float,
 ) -> uuid.UUID | None:
-    """Reserve-then-place, the dispatcher's SD-27 shape (since the
-    wallet, 14 Aug 2026 — test calls are billed like any call, so they
-    reserve like any call). The row and its wallet hold exist before a
-    single packet reaches Telnyx; a crash after this commit leaves a
-    'dialling' test_run that housekeeping fails at 15 minutes.
+    """Reserve-then-place, the dispatcher's SD-27 shape: the row exists
+    before a single packet reaches Telnyx; a crash after this commit
+    leaves a 'dialling' test_run that housekeeping fails at 15 minutes.
 
-    Returns None when the wallet cannot cover another hold. The row
-    lock is the same one the dispatcher's claims take, so test calls
-    and run calls can never jointly overdraw the wallet."""
-    from becca.services import wallet
+    The gate is the balance itself (24 Aug 2026): a test call goes out
+    while the wallet holds at least `wallet_floor_usd`, and settlement
+    debits the per-second actual. Run dispatch still reserves worst-case
+    holds (FR-WALLET-4); the row lock taken here is the same one the
+    dispatcher's claims take, so the two never race the cache.
 
+    Returns None when the balance is under the floor."""
     locked = (
         await session.execute(
             text(
@@ -180,11 +181,7 @@ async def reserve_test_run(
     ).first()
     if locked is None:
         return None
-    held = await wallet.reserved(
-        session, client_account_id=client_account_id, max_call_minutes=max_call_minutes
-    )
-    hold = wallet.per_call_reserve(locked[1], max_call_minutes)
-    if locked[0] - held - hold < 0:
+    if Decimal(locked[0]) < Decimal(str(wallet_floor_usd)):
         return None
     n = (
         await session.execute(

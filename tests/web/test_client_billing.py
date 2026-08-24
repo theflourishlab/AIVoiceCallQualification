@@ -50,7 +50,7 @@ async def test_wallet_shows_balance_rate_ledger_and_no_secrets(
     assert page.status_code == 200
     assert "$100.00" in page.text  # the balance KPI
     assert "$0.30 per minute" in page.text  # the rate, stated plainly
-    assert "rounded up" in page.text
+    assert "per second" in page.text
     assert "Top-up" in page.text  # the credit is a ledger line
     assert "costs you nothing" in page.text  # no number fee, said out loud
     # Still never: Telnyx, margin, or Becca's cost. Strip markup first —

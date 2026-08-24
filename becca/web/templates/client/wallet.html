@@ -27,8 +27,8 @@
     <span class="d">prepaid — calls draw from this</span></div>
   <div class="kpi"><span class="l">Call rate</span><span class="v num">${{ '%.2f' | format(rate_per_min) }}</span>
     <span class="d">per minute, every call</span></div>
-  <div class="kpi"><span class="l">How minutes count</span><span class="v">round up</span>
-    <span class="d">a 61-second call bills as 2 minutes</span></div>
+  <div class="kpi"><span class="l">How time counts</span><span class="v">per second</span>
+    <span class="d">a 61-second call bills 61 seconds</span></div>
 </div>
 
 <div class="split">
@@ -38,7 +38,7 @@
     <div class="panel-body stack-sm">
       <p style="margin:0">
         Calls are billed at <span class="cell-strong num">${{ '%.2f' | format(rate_per_min) }} per minute</span>,
-        rounded up to the next started minute. Test calls are billed at the same rate.
+        billed per second — no rounding up to the minute. Test calls are billed at the same rate.
         Calls that don't connect cost nothing. Your phone number costs you nothing —
         there is no monthly fee, no platform fee, nothing else.
       </p>

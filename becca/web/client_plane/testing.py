@@ -138,7 +138,7 @@ async def place_test_call(
             content=agent["content"],
             to_number=to_number.strip(),
             stand_ins=stand_ins,
-            max_call_minutes=settings.max_call_minutes,
+            wallet_floor_usd=settings.wallet_floor_usd,
         )
         if test_run_id is None:
             return RedirectResponse(f"/agents/{agent_id}/test?error=balance", status_code=303)

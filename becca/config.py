@@ -108,6 +108,13 @@ class Settings(BaseSettings):
     # the hold is provably sufficient, at the price of conservatism.
     max_call_minutes: int = 15
 
+    # Test-call gate (24 Aug 2026): the balance itself is the gate, not
+    # a worst-case hold. A test call may be placed while the wallet holds
+    # at least this much; below it, the test screen says top up. Runs
+    # keep FR-WALLET-4's hold arithmetic — that is what makes dialling
+    # a 4,000-row list safe; a demo visitor pressing Test is not that.
+    wallet_floor_usd: float = 1.0
+
     # Soft estimate for projections only (launch-screen suggested spend
     # cap, test-screen expected price) — never for billing or holds. A
     # typical qualification call runs about 2 minutes (spike §11).

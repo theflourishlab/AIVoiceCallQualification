@@ -30,7 +30,7 @@ async def test_completed_callback_settles_exactly_once(db: SessionFactory) -> No
     event = {
         "CallSid": gateway.calls[0]["call_control_id"],
         "CallStatus": "completed",
-        "CallDuration": "95",  # ceil(95/60) = 2 min x 0.30 = 0.60
+        "CallDuration": "95",  # 95s x 0.30/60 = 0.475 -> 0.48 per second
         "SequenceNumber": "3",
     }
     async with db.worker_session() as s:
@@ -44,7 +44,7 @@ async def test_completed_callback_settles_exactly_once(db: SessionFactory) -> No
         "SELECT wallet_balance_usd FROM client_account WHERE id = :cid",
         cid=str(run.client_id),
     )
-    assert float(balance) == 99.40  # 100 - 0.60, once
+    assert float(balance) == 99.52  # 100 - 0.48, once
     entries = await _one(
         db,
         "SELECT count(*) FROM wallet_ledger WHERE entry_type = 'debit_call'"
@@ -115,7 +115,7 @@ async def test_test_call_callback_settles_without_touching_status(db: SessionFac
     event = {
         "CallSid": "test-sid-1",
         "CallStatus": "completed",
-        "CallDuration": "61",  # 2 min x 0.30 = 0.60
+        "CallDuration": "61",  # 61s x 0.30/60 = 0.305 -> 0.31
         "SequenceNumber": "3",
     }
     async with db.worker_session() as s:
@@ -135,7 +135,7 @@ async def test_test_call_callback_settles_without_touching_status(db: SessionFac
         "SELECT wallet_balance_usd FROM client_account WHERE id = :cid",
         cid=str(run.client_id),
     )
-    assert float(balance) == 99.40
+    assert float(balance) == 99.69
     entry_type = await _one(
         db, "SELECT entry_type FROM wallet_ledger WHERE test_run_id = :id", id=str(test_run_id)
     )

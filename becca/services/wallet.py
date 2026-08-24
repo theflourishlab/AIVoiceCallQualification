@@ -11,8 +11,10 @@ so the cache never moves twice).
 Money flows:
 - credit / adjustment: staff, console, audited by the caller.
 - debit_call: settled from the TeXML `completed` callback, at the rate
-  snapshotted onto the call row when it was claimed. ceil(sec/60),
-  0 seconds bills nothing.
+  snapshotted onto the call row when it was claimed. Pro-rata per
+  second (24 Aug 2026; supersedes the started-minute round-up):
+  rate x sec / 60, half-up to the cent. 0 seconds — or a charge that
+  rounds to nothing — bills nothing.
 - debit_test_call: same, keyed on test_run.id.
 
 Reservations are COMPUTED, never stored: every in-flight attempt
@@ -24,7 +26,7 @@ Decimal-bound.
 """
 
 import uuid
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from sqlalchemy import text
@@ -32,12 +34,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def billed_minutes(duration_sec: int | None) -> int:
-    """Per-minute round-up: 61s bills as 2. Zero or unknown bills 0 —
-    a completed call with no seconds had no conversation, and charging
-    for it invites disputes over cents."""
+    """The minute count shown on ledger lines and the overview KPI —
+    started minutes, so a 61s call shows as 2. Money is NOT this:
+    charges are per second (call_charge)."""
     if not duration_sec or duration_sec <= 0:
         return 0
     return -(-int(duration_sec) // 60)
+
+
+def call_charge(duration_sec: int | None, rate_per_min_usd: Decimal) -> Decimal:
+    """What a call costs: rate x seconds / 60, half-up to the cent. Zero
+    or unknown duration is zero — a completed call with no seconds had
+    no conversation, and charging for it invites disputes over cents.
+    A charge that rounds to $0.00 (a 1s call) is also nothing: the
+    ledger's sign check forbids a zero debit, and nobody wants one."""
+    if not duration_sec or duration_sec <= 0:
+        return Decimal("0.00")
+    exact = Decimal(str(rate_per_min_usd)) * Decimal(int(duration_sec)) / Decimal(60)
+    return exact.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def per_call_reserve(rate_per_min_usd: Decimal, max_call_minutes: int) -> Decimal:
@@ -280,10 +294,11 @@ async def _settle(
     rate: Decimal,
     idempotency_key: str | None,
 ) -> Decimal | None:
-    minutes = billed_minutes(duration_sec)
-    if minutes == 0:
+    charge = call_charge(duration_sec, rate)
+    if charge <= 0:
         return None
-    amount = Decimal(str(round(-(minutes * float(rate)), 2)))
+    amount = -charge
+    minutes = billed_minutes(duration_sec)  # display only; never the price
     # key_column is one of two literals chosen above, never user input.
     entry_id = (
         await session.execute(

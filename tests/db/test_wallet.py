@@ -72,15 +72,16 @@ async def test_credit_unknown_client_is_none(db: SessionFactory) -> None:
     assert entry is None
 
 
-async def test_settle_call_rounds_up_and_moves_cache(db: SessionFactory) -> None:
+async def test_settle_call_bills_per_second_and_moves_cache(db: SessionFactory) -> None:
     client_id, agent_id = await seed_client(db, name="sylvastar", balance=100)
-    # 61s rounds up to 2 min x 0.30 = 0.60
+    # 61s x 0.30/60 = 0.305 -> 0.31 (half-up to the cent); the ledger
+    # line still shows 2 started minutes, but that is display, not price.
     call_id = await _insert_call(db, client_id=client_id, agent_id=agent_id, duration_sec=61)
     async with db.worker_session() as s:
         amount = await wallet.settle_call(s, call_id=call_id)
-    assert amount is not None and float(amount) == -0.60
+    assert amount is not None and float(amount) == -0.31
     async with db.console_session() as s:
-        assert float(await wallet.balance(s, client_account_id=client_id)) == 99.40
+        assert float(await wallet.balance(s, client_account_id=client_id)) == 99.69
         assert await wallet.verify(s, client_account_id=client_id)
         row = (
             await s.execute(
@@ -94,7 +95,7 @@ async def test_settle_call_rounds_up_and_moves_cache(db: SessionFactory) -> None
     assert row[0] == "debit_call"
     assert row[1] == 2
     assert row[2] == 61
-    assert float(row[3]) == -0.60
+    assert float(row[3]) == -0.31
 
 
 async def test_settle_call_is_idempotent(db: SessionFactory) -> None:
@@ -104,7 +105,7 @@ async def test_settle_call_is_idempotent(db: SessionFactory) -> None:
         first = await wallet.settle_call(s, call_id=call_id)
     async with db.worker_session() as s:
         second = await wallet.settle_call(s, call_id=call_id)
-    assert first is not None and float(first) == -0.60  # 2 min x 0.30
+    assert first is not None and float(first) == -0.60  # 120s x 0.30/60
     assert second is None
     async with db.console_session() as s:
         # Debited exactly once: 100 - 0.60
@@ -240,6 +241,17 @@ async def test_set_rate_reports_actual_change(db: SessionFactory) -> None:
     assert first == ("sylvastar", True)
     assert again == ("sylvastar", False)
     assert missing is None
+
+
+def test_call_charge_is_per_second() -> None:
+    # 1s at 0.20 rounds to nothing (and a zero debit is forbidden anyway);
+    # 30s at 0.20 = 0.10; 61s at 0.30 = 0.305 -> 0.31; 600s at 0.30 = 3.00.
+    assert wallet.call_charge(None, Decimal("0.20")) == Decimal("0.00")
+    assert wallet.call_charge(0, Decimal("0.20")) == Decimal("0.00")
+    assert wallet.call_charge(1, Decimal("0.20")) == Decimal("0.00")
+    assert wallet.call_charge(30, Decimal("0.20")) == Decimal("0.10")
+    assert wallet.call_charge(61, Decimal("0.30")) == Decimal("0.31")
+    assert wallet.call_charge(600, Decimal("0.30")) == Decimal("3.00")
 
 
 def test_billed_minutes_rounding() -> None:

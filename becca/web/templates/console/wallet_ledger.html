@@ -14,7 +14,7 @@
       ${{ '%.2f' | format(client.balance) }}</span>
     <span class="d">{% if client.balance < 0 %}negative — all dialling blocked until topped up{% else %}prepaid{% endif %}</span></div>
   <div class="kpi"><span class="l">Rate</span><span class="v num">${{ '%.2f' | format(client.rate_per_min) }}</span>
-    <span class="d">per minute, rounded up</span></div>
+    <span class="d">per minute, billed per second</span></div>
   <div class="kpi"><span class="l">Credited all-time</span><span class="v num">${{ '%.2f' | format(client.credited_total) }}</span>
     <span class="d">billed ${{ '%.2f' | format(client.billed_mtd) }} MTD</span></div>
 </div>

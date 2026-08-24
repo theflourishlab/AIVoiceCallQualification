@@ -93,6 +93,21 @@ async def seed(name: str, email: str, rate: float, credit: float, database_url: 
             else:
                 print(f"app_user exists: {email!r}")
 
+            changed = await wallet.set_rate(
+                s, client_account_id=uuid.UUID(str(client_id)), rate_per_min_usd=Decimal(str(rate))
+            )
+            if changed is not None and changed[1]:
+                await audit.record(
+                    s,
+                    actor_type="staff",
+                    actor_id=SEED_ACTOR,
+                    action="set_rate_per_min",
+                    client_account_id=uuid.UUID(str(client_id)),
+                    target=str(client_id),
+                    meta={"rate_per_min_usd": round(rate, 2)},
+                )
+                print(f"rate set to ${rate:.2f}/min")
+
             balance = (
                 await s.execute(
                     text("SELECT wallet_balance_usd FROM client_account WHERE id = :cid"),
@@ -133,7 +148,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", default="Becca Demo")
     parser.add_argument("--email", required=True, help="google_email of the demo app_user")
-    parser.add_argument("--rate", type=float, default=0.30, help="per-minute rate at creation")
+    parser.add_argument("--rate", type=float, default=0.20, help="USD per minute; re-runs apply it")
     parser.add_argument("--credit", type=float, default=20.0, help="target wallet balance, USD")
     parser.add_argument(
         "--database-url",
