@@ -14,7 +14,7 @@ Describe the conversation you want to have. Becca generates the agent, calls you
 
 ## 🚀 Live Demo
 
-* **Try it from your phone:** **[https://wema-hackaholics7-0-hackathon-yabatech-g9g3.onrender.com/auth/demo?code=5c5eeaa705c0fa49](https://wema-hackaholics7-0-hackathon-yabatech-g9g3.onrender.com/auth/demo?code=5c5eeaa705c0fa49)** — this link *is* the sign-in. It drops you into a shared demo account with three ready-built agents: open one, hit **Test**, enter your own number, and Becca calls you. Describe your own agent if you like. Launch is visible but blocked by pre-flight — that's the safety gate doing its job, not a bug.
+* **Try it from your laptop:** **[https://wema-hackaholics7-0-hackathon-yabatech-g9g3.onrender.com/auth/demo?code=5c5eeaa705c0fa49](https://wema-hackaholics7-0-hackathon-yabatech-g9g3.onrender.com/auth/demo?code=5c5eeaa705c0fa49)** — this link *is* the sign-in. It drops you into a shared demo account with three ready-built agents: open one, hit **Test**, enter your own number, and Becca calls you. Describe your own agent if you like. Launch is visible but blocked by pre-flight — that's the safety gate doing its job, not a bug.
 * **Recorded Demo:** *[Youtube link — https://youtu.be/l3MuJqEP5xQ]*
 
 > **Access:** production sign-in is Google OAuth with no self sign-up — a user exists only if staff added their email. The demo link above is a deliberate, single-account door for judges and visitors; it can be rotated in one env change, and the demo wallet caps what it can spend.
