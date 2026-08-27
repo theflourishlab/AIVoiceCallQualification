@@ -8,7 +8,6 @@ Describe the conversation you want to have. Becca generates the agent, calls you
 ## Team Members
 
 - **Flourish Olukotun**
-- **Folaranmi Olaniyi**
 
 ---
 
