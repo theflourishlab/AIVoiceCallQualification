@@ -17,7 +17,9 @@ from fastapi import FastAPI
 from markupsafe import Markup, escape
 from starlette.applications import Starlette
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.routing import Host, Mount
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse, Response
+from starlette.routing import Host, Mount, Route
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
@@ -135,6 +137,14 @@ def _plane_app(
     return app
 
 
+async def _healthz(_: Request) -> Response:
+    """Liveness probe for uptime pingers (UptimeRobot sends HEAD by
+    default; FastAPI's ``@get`` routes answer HEAD with 405, and a
+    plain Starlette Route adds HEAD to GET for free). Answers on any
+    hostname, before auth, without touching the database."""
+    return PlainTextResponse("ok")
+
+
 def create_app() -> Starlette:
     obs.init()  # scrubber active before anything can throw (FR-NF-6A)
     settings = load_settings()
@@ -170,6 +180,7 @@ def create_app() -> Starlette:
 
     return Starlette(
         routes=[
+            Route("/healthz", _healthz, methods=["GET"]),
             Mount("/webhooks", app=webhook_app),
             Host(settings.console_host, app=console_app),
             Host(settings.client_host, app=client_app),
